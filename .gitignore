@@ -1,0 +1,13 @@
+node_modules
+dist
+recordings
+certs
+config.json
+.env
+*.log
+.DS_Store
+/client
+/ios
+/android
+src/client/public/models
+src/client/public/wasm
