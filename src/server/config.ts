@@ -39,6 +39,10 @@ function parseConfig(data: unknown): AppConfig {
       typeof d?.maxClipSeconds === 'number'
         ? d.maxClipSeconds
         : DEFAULT_CONFIG.maxClipSeconds,
+    customMatchThreshold:
+      typeof d?.customMatchThreshold === 'number'
+        ? d.customMatchThreshold
+        : DEFAULT_CONFIG.customMatchThreshold,
     notificationObjects: Array.isArray(d?.notificationObjects)
       ? d.notificationObjects
       : DEFAULT_CONFIG.notificationObjects,
@@ -57,6 +61,7 @@ const APP_CONFIG_KEYS = [
   'preBufferSeconds',
   'postBufferSeconds',
   'maxClipSeconds',
+  'customMatchThreshold',
   'deviceId',
 ] as const;
 

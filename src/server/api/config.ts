@@ -21,6 +21,7 @@ export const configApi = {
       'preBufferSeconds',
       'postBufferSeconds',
       'maxClipSeconds',
+      'customMatchThreshold',
     ] as const satisfies readonly (keyof AppConfig)[];
     for (const key of numKeys) {
       const val = body[key];

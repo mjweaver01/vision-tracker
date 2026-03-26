@@ -15,6 +15,7 @@ export const DEFAULT_CONFIG: AppConfig = {
   preBufferSeconds: 2,
   postBufferSeconds: 2,
   maxClipSeconds: 30,
+  customMatchThreshold: 0.4,
   notificationObjects: [],
   notificationsEnabled: false,
 };

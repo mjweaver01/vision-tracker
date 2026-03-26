@@ -11,6 +11,8 @@ export interface AppConfig {
   /** Max clip duration in seconds (safety cap) */
   maxClipSeconds: number;
   deviceId?: string;
+  /** Similarity threshold for custom object matching (0-1) */
+  customMatchThreshold: number;
   notificationObjects: string[];
   notificationsEnabled: boolean;
 }

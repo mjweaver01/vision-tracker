@@ -29,6 +29,9 @@ export function Configuration({
     config.postBufferSeconds
   );
   const [maxClipSeconds, setMaxClipSeconds] = useState(config.maxClipSeconds);
+  const [customMatchThreshold, setCustomMatchThreshold] = useState(
+    config.customMatchThreshold
+  );
   const [captureIntervalMs, setCaptureIntervalMs] = useState(
     config.captureIntervalMs
   );
@@ -51,6 +54,7 @@ export function Configuration({
     setPreBufferSeconds(config.preBufferSeconds);
     setPostBufferSeconds(config.postBufferSeconds);
     setMaxClipSeconds(config.maxClipSeconds);
+    setCustomMatchThreshold(config.customMatchThreshold);
     setCaptureIntervalMs(config.captureIntervalMs);
     setDeviceId(config.deviceId ?? '');
     setNotificationsEnabled(config.notificationsEnabled);
@@ -69,6 +73,7 @@ export function Configuration({
         preBufferSeconds,
         postBufferSeconds,
         maxClipSeconds,
+        customMatchThreshold,
         captureIntervalMs,
         deviceId: deviceId || undefined,
         notificationsEnabled,
@@ -193,6 +198,24 @@ export function Configuration({
           />
           <p className="mt-1 text-xs text-zinc-500">
             Minimum confidence for object detection to trigger recording
+          </p>
+        </div>
+        <div>
+          <label htmlFor="customMatch" className="mb-1 block text-sm text-zinc-400">
+            Custom object match threshold ({Math.round(customMatchThreshold * 100)}%)
+          </label>
+          <input
+            id="customMatch"
+            type="range"
+            min={0.1}
+            max={0.95}
+            step={0.01}
+            value={customMatchThreshold}
+            onChange={e => setCustomMatchThreshold(Number(e.target.value))}
+            className="w-full"
+          />
+          <p className="mt-1 text-xs text-zinc-500">
+            Similarity threshold for recognizing custom-trained objects
           </p>
         </div>
         <ObjectTypeMultiselect

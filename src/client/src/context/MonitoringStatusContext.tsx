@@ -122,6 +122,7 @@ export function MonitoringStatusProvider({
     deviceId: config.deviceId || undefined,
     notificationObjects: config.notificationObjects ?? [],
     notificationsEnabled: config.notificationsEnabled ?? false,
+    customMatchThreshold: config.customMatchThreshold ?? 0.4,
     customObjects,
   });
 

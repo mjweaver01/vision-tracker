@@ -24,6 +24,7 @@ interface UseVisionCaptureOptions {
   deviceId?: string;
   notificationObjects?: string[];
   notificationsEnabled?: boolean;
+  customMatchThreshold?: number;
   customObjects?: CustomObject[];
 }
 
@@ -53,6 +54,7 @@ export function useVisionCapture(
     deviceId,
     notificationObjects = [],
     notificationsEnabled = false,
+    customMatchThreshold = 0.4,
     customObjects = [],
   } = options;
 
@@ -72,9 +74,9 @@ export function useVisionCapture(
   enabledRef.current = enabled;
   optionsRef.current = options;
 
-  // Embedding lock and cached label remapping from custom object matching
+  // Embedding lock and cached per-detection results from custom object matching
   const embeddingInFlightRef = useRef(false);
-  const customLabelMapRef = useRef<Map<string, string>>(new Map());
+  const cachedEnhancedRef = useRef<DetectionResult[]>([]);
 
   // Pre-buffer: a continuously running recorder that we stop to grab recent video
   const preRecorderRef = useRef<MediaRecorder | null>(null);
@@ -376,7 +378,8 @@ export function useVisionCapture(
     async (
       detections: DetectionResult[],
       customObjs: CustomObject[],
-      video: HTMLVideoElement
+      video: HTMLVideoElement,
+      threshold: number
     ): Promise<DetectionResult[]> => {
       const enhanced = [...detections];
 
@@ -399,22 +402,12 @@ export function useVisionCapture(
             const match = findBestMatch(
               embedding,
               relevant,
-              relevant[0]?.matchThreshold ?? 0.6
-            );
-            console.log(
-              '[VisionTracker] Embed match:',
-              det.label,
-              '→',
-              match
-                ? `${match.label} (${match.similarity.toFixed(3)})`
-                : 'no match',
-              `(threshold: ${relevant[0]?.matchThreshold ?? 0.6}, examples: ${relevant[0]?.embeddings?.length})`
+              threshold
             );
             if (match) {
               enhanced[i] = {
                 ...det,
-                label: match.label,
-                score: match.similarity,
+                label: `${det.label} (${match.label})`,
               };
             }
           } catch (err) {
@@ -439,49 +432,31 @@ export function useVisionCapture(
             video.videoHeight
           );
           const frameEmb = await embedImage(frameCrop);
-          const match = findBestMatch(frameEmb, newObjs, 0.5);
+          const match = findBestMatch(frameEmb, newObjs, threshold);
           if (match) {
-            const alreadyPresent = enhanced.some(d => d.label === match.label);
-            if (!alreadyPresent) {
-              // Try to find which COCO detection this custom object corresponds to
-              // by embedding each detection's crop and comparing
-              let replaced = false;
-              for (let i = 0; i < enhanced.length; i++) {
-                const det = enhanced[i];
-                if (!det.boundingBox) continue;
-                try {
-                  const crop = cropFromVideo(
-                    video,
-                    det.boundingBox.x,
-                    det.boundingBox.y,
-                    det.boundingBox.width,
-                    det.boundingBox.height
-                  );
-                  const cropEmb = await embedImage(crop);
-                  const matchedObj = newObjs.find(o => o.label === match.label);
-                  if (matchedObj) {
-                    const cropMatch = findBestMatch(
-                      cropEmb,
-                      [matchedObj],
-                      0.35
-                    );
-                    if (cropMatch) {
-                      enhanced[i] = {
-                        ...det,
-                        label: match.label,
-                        score: cropMatch.similarity,
-                      };
-                      replaced = true;
-                      break;
-                    }
+            // Append custom label to the most likely COCO detection via crop matching
+            for (let i = 0; i < enhanced.length; i++) {
+              const det = enhanced[i];
+              if (!det.boundingBox || det.label.includes('(')) continue;
+              try {
+                const crop = cropFromVideo(
+                  video,
+                  det.boundingBox.x,
+                  det.boundingBox.y,
+                  det.boundingBox.width,
+                  det.boundingBox.height
+                );
+                const cropEmb = await embedImage(crop);
+                const matchedObj = newObjs.find(o => o.label === match.label);
+                if (matchedObj) {
+                  const cropMatch = findBestMatch(cropEmb, [matchedObj], threshold * 0.8);
+                  if (cropMatch) {
+                    enhanced[i] = { ...det, label: `${det.label} (${match.label})` };
+                    break;
                   }
-                } catch {
-                  // crop embed failed, try next
                 }
-              }
-              // If no crop matched, append as standalone detection
-              if (!replaced) {
-                enhanced.push({ label: match.label, score: match.similarity });
+              } catch {
+                // crop embed failed, try next
               }
             }
           }
@@ -555,52 +530,46 @@ export function useVisionCapture(
               ? mapped.filter(d => types.includes(d.label))
               : mapped;
 
-          // Apply cached custom labels to fresh COCO detections (replaces, not appends)
+          // Apply cached per-detection custom labels using bounding box proximity
           const customObjs = opts.customObjects ?? [];
-          const labelMap = customLabelMapRef.current;
-          const labeled = filtered.map(d => {
-            const custom = labelMap.get(d.label);
-            return custom ? { ...d, label: custom } : d;
-          });
+          const cached = cachedEnhancedRef.current;
+          const labeled = cached.length > 0
+            ? filtered.map(d => {
+                if (!d.boundingBox) return d;
+                // Find the closest cached detection that has a parenthetical custom label
+                let bestDist = Infinity;
+                let bestMatch: DetectionResult | null = null;
+                const cx = d.boundingBox.x + d.boundingBox.width / 2;
+                const cy = d.boundingBox.y + d.boundingBox.height / 2;
+                for (const c of cached) {
+                  if (!c.boundingBox || !c.label.includes('(')) continue;
+                  const ccx = c.boundingBox.x + c.boundingBox.width / 2;
+                  const ccy = c.boundingBox.y + c.boundingBox.height / 2;
+                  const dist = Math.hypot(cx - ccx, cy - ccy);
+                  if (dist < bestDist && dist < 150) {
+                    bestDist = dist;
+                    bestMatch = c;
+                  }
+                }
+                if (bestMatch) {
+                  // Extract the parenthetical and apply to current COCO label
+                  const paren = bestMatch.label.match(/\(([^)]+)\)/);
+                  return paren ? { ...d, label: `${d.label} (${paren[1]})` } : d;
+                }
+                return d;
+              })
+            : filtered;
 
           setDetections(labeled);
 
-          // Refresh custom label map async (doesn't block rendering)
+          // Refresh cached enhanced detections async (per-detection embedding)
           if (customObjs.length > 0 && video && !embeddingInFlightRef.current) {
             embeddingInFlightRef.current = true;
-            console.log(
-              '[VisionTracker] Running custom match, objects:',
-              customObjs.map(o => o.label),
-              'detections:',
-              filtered.map(d => d.label)
-            );
-            matchCustomObjects(filtered, customObjs, video)
+            matchCustomObjects(filtered, customObjs, video, opts.customMatchThreshold ?? 0.4)
               .then(enhanced => {
-                console.log(
-                  '[VisionTracker] Match result:',
-                  enhanced.map(d => d.label),
-                  'from:',
-                  filtered.map(d => d.label)
-                );
                 embeddingInFlightRef.current = false;
-                // Update label map — only overwrite entries that the embedder had an opinion on
-                const map = customLabelMapRef.current;
-                for (let i = 0; i < filtered.length; i++) {
-                  if (!enhanced[i]) continue;
-                  if (enhanced[i].label !== filtered[i].label) {
-                    // Matched a custom object — cache the mapping
-                    map.set(filtered[i].label, enhanced[i].label);
-                  }
-                  // If it didn't match, keep any existing mapping (don't clear on one bad frame)
-                }
-                customLabelMapRef.current = map;
-                // Apply updated map to current detections immediately
-                setDetections(prev =>
-                  prev.map(d => {
-                    const custom = map.get(d.label);
-                    return custom ? { ...d, label: custom } : d;
-                  })
-                );
+                cachedEnhancedRef.current = enhanced;
+                setDetections(enhanced);
               })
               .catch(err => {
                 console.error('[VisionTracker] Custom match failed:', err);
