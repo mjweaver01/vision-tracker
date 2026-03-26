@@ -34,13 +34,13 @@ import type {
 const MAX_CHART_POINTS = 300;
 
 const COLORS = [
-  '#10b981',
-  '#34d399',
-  '#6ee7b7',
-  '#a7f3d0',
-  '#5eead4',
-  '#2dd4bf',
-  '#14b8a6',
+  '#ef4444',
+  '#f87171',
+  '#fca5a5',
+  '#fecaca',
+  '#fb923c',
+  '#f97316',
+  '#dc2626',
 ];
 
 function formatBucketLabel(key: string, grouping: TimeGrouping): string {
@@ -345,7 +345,7 @@ export function AnalyticsPage() {
           <select
             value={chartView}
             onChange={e => setChartView(e.target.value as ChartView)}
-            className="rounded-md border border-zinc-700 bg-zinc-800 px-3 py-2 text-sm text-zinc-100 focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
+            className="rounded-md border border-zinc-700 bg-zinc-800 px-3 py-2 text-sm text-zinc-100 focus:border-red-500 focus:outline-none focus:ring-1 focus:ring-red-500"
           >
             <option value="time">Time series</option>
             <option value="distribution">Distribution (pie)</option>
@@ -359,7 +359,7 @@ export function AnalyticsPage() {
             <select
               value={grouping}
               onChange={e => setGrouping(e.target.value as TimeGrouping)}
-              className="rounded-md border border-zinc-700 bg-zinc-800 px-3 py-2 text-sm text-zinc-100 focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
+              className="rounded-md border border-zinc-700 bg-zinc-800 px-3 py-2 text-sm text-zinc-100 focus:border-red-500 focus:outline-none focus:ring-1 focus:ring-red-500"
             >
               <option value="minute">By minute</option>
               <option value="hour">By hour</option>
@@ -375,7 +375,7 @@ export function AnalyticsPage() {
             onChange={e =>
               setDateRange(e.target.value as '7' | '30' | '90' | 'all')
             }
-            className="rounded-md border border-zinc-700 bg-zinc-800 px-3 py-2 text-sm text-zinc-100 focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
+            className="rounded-md border border-zinc-700 bg-zinc-800 px-3 py-2 text-sm text-zinc-100 focus:border-red-500 focus:outline-none focus:ring-1 focus:ring-red-500"
           >
             <option value="7">Last 7 days</option>
             <option value="30">Last 30 days</option>
@@ -390,7 +390,7 @@ export function AnalyticsPage() {
           <select
             value={classificationFilter}
             onChange={e => setClassificationFilter(e.target.value)}
-            className="rounded-md border border-zinc-700 bg-zinc-800 px-3 py-2 text-sm text-zinc-100 focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
+            className="rounded-md border border-zinc-700 bg-zinc-800 px-3 py-2 text-sm text-zinc-100 focus:border-red-500 focus:outline-none focus:ring-1 focus:ring-red-500"
           >
             <option value="all">All</option>
             {objectTypes.map(c => (
@@ -408,7 +408,7 @@ export function AnalyticsPage() {
             <select
               value={chartType}
               onChange={e => setChartType(e.target.value as 'bar' | 'line')}
-              className="rounded-md border border-zinc-700 bg-zinc-800 px-3 py-2 text-sm text-zinc-100 focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
+              className="rounded-md border border-zinc-700 bg-zinc-800 px-3 py-2 text-sm text-zinc-100 focus:border-red-500 focus:outline-none focus:ring-1 focus:ring-red-500"
             >
               <option value="bar">Bar</option>
               <option value="line">Line</option>
@@ -424,7 +424,7 @@ export function AnalyticsPage() {
                   type="checkbox"
                   checked={stacked}
                   onChange={e => setStacked(e.target.checked)}
-                  className="rounded border-zinc-600 bg-zinc-800 text-emerald-600 focus:ring-emerald-500"
+                  className="rounded border-zinc-600 bg-zinc-800 text-red-600 focus:ring-red-500"
                 />
                 <span className="text-sm text-zinc-400">
                   Stack by object type
@@ -447,7 +447,7 @@ export function AnalyticsPage() {
                   className={`rounded px-2 py-1 text-xs ${
                     visibleClassifications.size === 0 ||
                     visibleClassifications.has(cls)
-                      ? 'bg-emerald-600/30 text-emerald-400'
+                      ? 'bg-red-600/30 text-red-400'
                       : 'bg-zinc-700/50 text-zinc-500 line-through'
                   }`}
                 >
@@ -471,7 +471,7 @@ export function AnalyticsPage() {
       <div className="mb-6 grid grid-cols-2 gap-4 sm:grid-cols-4">
         <div className="rounded-md border border-zinc-700 bg-zinc-800/50 px-4 py-3">
           <p className="text-xs text-zinc-500">Total snapshots</p>
-          <p className="text-xl font-semibold text-emerald-400">
+          <p className="text-xl font-semibold text-red-400">
             {summary.total}
           </p>
         </div>
@@ -577,7 +577,7 @@ export function AnalyticsPage() {
                   return (
                     <div className="rounded-md border border-zinc-600 bg-zinc-800 px-3 py-2 text-sm">
                       <p className="font-medium text-zinc-100">{d.label}</p>
-                      <p className="mt-1 text-emerald-400">Total: {d.count}</p>
+                      <p className="mt-1 text-red-400">Total: {d.count}</p>
                       {Object.entries(d.detections)
                         .sort((a, b) => b[1] - a[1])
                         .map(([cls, cnt]) => (
@@ -616,7 +616,7 @@ export function AnalyticsPage() {
                   <Line
                     type="monotone"
                     dataKey="count"
-                    stroke="#10b981"
+                    stroke="#ef4444"
                     strokeWidth={2}
                     dot={false}
                   />
@@ -625,7 +625,7 @@ export function AnalyticsPage() {
                 <Line
                   type="monotone"
                   dataKey="count"
-                  stroke="#10b981"
+                  stroke="#ef4444"
                   strokeWidth={2}
                   dot={false}
                 />
@@ -665,7 +665,7 @@ export function AnalyticsPage() {
                   return (
                     <div className="rounded-md border border-zinc-600 bg-zinc-800 px-3 py-2 text-sm">
                       <p className="font-medium text-zinc-100">{d.label}</p>
-                      <p className="mt-1 text-emerald-400">Total: {d.count}</p>
+                      <p className="mt-1 text-red-400">Total: {d.count}</p>
                       {Object.entries(d.detections)
                         .sort((a, b) => b[1] - a[1])
                         .map(([cls, cnt]) => (
@@ -705,14 +705,14 @@ export function AnalyticsPage() {
                     />
                   </>
                 ) : (
-                  <Bar dataKey="count" fill="#10b981" radius={[4, 4, 0, 0]}>
+                  <Bar dataKey="count" fill="#ef4444" radius={[4, 4, 0, 0]}>
                     {chartData.map((_, i) => (
                       <Cell key={i} fill={COLORS[i % COLORS.length]} />
                     ))}
                   </Bar>
                 )
               ) : (
-                <Bar dataKey="count" fill="#10b981" radius={[4, 4, 0, 0]}>
+                <Bar dataKey="count" fill="#ef4444" radius={[4, 4, 0, 0]}>
                   {chartData.map((_, i) => (
                     <Cell key={i} fill={COLORS[i % COLORS.length]} />
                   ))}

@@ -27,7 +27,7 @@ export function MonitorPage() {
         </p>
         <button
           onClick={() => setCameraEnabled(true)}
-          className="rounded-xl bg-emerald-600 px-6 py-4 font-medium text-white hover:bg-emerald-500 active:bg-emerald-500 touch-manipulation min-h-[48px] w-full sm:w-auto sm:min-h-0 sm:px-4 sm:py-2"
+          className="rounded-xl bg-red-600 px-6 py-4 font-medium text-white hover:bg-red-500 active:bg-red-500 touch-manipulation min-h-[48px] w-full sm:w-auto sm:min-h-0 sm:px-4 sm:py-2"
         >
           Start monitoring
         </button>
@@ -57,7 +57,7 @@ export function MonitorPage() {
       {detections.length > 0 && (
         <div className="rounded-lg bg-zinc-900/80 px-4 py-2 ring-1 ring-zinc-700/50 text-sm text-zinc-400">
           Detected:{' '}
-          <span className="font-medium text-emerald-400">
+          <span className="font-medium text-red-400">
             {detections.map(d => d.label).join(', ')}
           </span>
         </div>
@@ -65,7 +65,7 @@ export function MonitorPage() {
       {lastDetection && detections.length === 0 && (
         <div className="rounded-lg bg-zinc-900/80 px-4 py-2 ring-1 ring-zinc-700/50 text-sm text-zinc-400">
           Last detected:{' '}
-          <span className="font-medium text-emerald-400">{lastDetection}</span>
+          <span className="font-medium text-red-400">{lastDetection}</span>
         </div>
       )}
       {!isMobile && (

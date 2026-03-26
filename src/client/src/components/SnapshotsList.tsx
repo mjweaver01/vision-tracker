@@ -118,7 +118,7 @@ export function SnapshotsList({
                     {s.detections.length > 0 && (
                       <>
                         {' · '}
-                        <span className="text-emerald-400/90">
+                        <span className="text-red-400/90">
                           {s.detections[0].label}
                           {s.detections.length > 1 &&
                             ` +${s.detections.length - 1}`}
@@ -135,8 +135,8 @@ export function SnapshotsList({
                       compact ? 'min-h-[44px] min-w-[44px]' : 'sm:min-h-0 sm:min-w-0 sm:px-2 sm:py-1'
                     } ${
                       expandedId === s.id
-                        ? 'bg-emerald-600 text-white'
-                        : 'text-emerald-400 hover:bg-emerald-500/20 active:bg-emerald-500/30'
+                        ? 'bg-red-600 text-white'
+                        : 'text-red-400 hover:bg-red-500/20 active:bg-red-500/30'
                     }`}
                   >
                     {expandedId === s.id ? 'Hide' : 'View'}

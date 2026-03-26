@@ -61,7 +61,7 @@ export function CameraFeed({ videoRef, stream, detections, isCapturing }: Camera
         const bh = height * scaleY;
 
         // Bounding box
-        ctx.strokeStyle = '#10b981';
+        ctx.strokeStyle = '#ef4444';
         ctx.lineWidth = 2;
         ctx.strokeRect(bx, by, bw, bh);
 
@@ -72,7 +72,7 @@ export function CameraFeed({ videoRef, stream, detections, isCapturing }: Camera
         const textHeight = 18;
         const padding = 4;
 
-        ctx.fillStyle = 'rgba(16, 185, 129, 0.85)';
+        ctx.fillStyle = 'rgba(239, 68, 68, 0.85)';
         ctx.fillRect(
           bx,
           by - textHeight - padding,
@@ -96,7 +96,7 @@ export function CameraFeed({ videoRef, stream, detections, isCapturing }: Camera
     <div
       ref={containerRef}
       className={`relative w-full overflow-hidden rounded-xl bg-zinc-900 ${
-        isCapturing ? 'ring-2 ring-emerald-500' : ''
+        isCapturing ? 'ring-2 ring-red-500' : ''
       }`}
     >
       <video
@@ -112,7 +112,7 @@ export function CameraFeed({ videoRef, stream, detections, isCapturing }: Camera
         className="pointer-events-none absolute inset-0 h-full w-full"
       />
       {isCapturing && (
-        <div className="absolute right-3 top-3 flex items-center gap-2 rounded-full bg-emerald-600/90 px-3 py-1 text-xs font-medium text-white">
+        <div className="absolute right-3 top-3 flex items-center gap-2 rounded-full bg-red-600/90 px-3 py-1 text-xs font-medium text-white">
           <span className="h-2 w-2 animate-pulse rounded-full bg-white" />
           Capturing
         </div>

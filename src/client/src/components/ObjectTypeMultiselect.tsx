@@ -48,13 +48,13 @@ export function ObjectTypeMultiselect({
           {selected.map(s => (
             <span
               key={s}
-              className="inline-flex items-center gap-1 rounded-full bg-emerald-600/20 px-2 py-0.5 text-xs text-emerald-400"
+              className="inline-flex items-center gap-1 rounded-full bg-red-600/20 px-2 py-0.5 text-xs text-red-400"
             >
               {s}
               <button
                 type="button"
                 onClick={() => onRemove(s)}
-                className="ml-0.5 text-emerald-400/60 hover:text-emerald-400"
+                className="ml-0.5 text-red-400/60 hover:text-red-400"
               >
                 &times;
               </button>
@@ -72,7 +72,7 @@ export function ObjectTypeMultiselect({
           }}
           onFocus={() => setOpen(true)}
           placeholder={placeholder}
-          className="w-full rounded-md border border-zinc-700 bg-zinc-800 px-3 py-2 text-sm text-zinc-100 focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
+          className="w-full rounded-md border border-zinc-700 bg-zinc-800 px-3 py-2 text-sm text-zinc-100 focus:border-red-500 focus:outline-none focus:ring-1 focus:ring-red-500"
         />
         {open && filtered.length > 0 && (
           <div className="absolute z-20 mt-1 max-h-48 w-full overflow-y-auto rounded-md border border-zinc-700 bg-zinc-800 shadow-lg">
@@ -86,7 +86,7 @@ export function ObjectTypeMultiselect({
                 }}
                 className={`w-full px-3 py-2 text-left text-sm transition-colors hover:bg-zinc-700 ${
                   selected.includes(o)
-                    ? 'text-emerald-400'
+                    ? 'text-red-400'
                     : 'text-zinc-300'
                 }`}
               >

@@ -127,7 +127,7 @@ export function Configuration({ config, onSave, devices, embedded }: Configurati
               id="camera"
               value={deviceId}
               onChange={e => handleDeviceChange(e.target.value)}
-              className="w-full rounded-md border border-zinc-700 bg-zinc-800 px-3 py-2 text-zinc-100 focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
+              className="w-full rounded-md border border-zinc-700 bg-zinc-800 px-3 py-2 text-zinc-100 focus:border-red-500 focus:outline-none focus:ring-1 focus:ring-red-500"
             >
               <option value="">Default</option>
               {devices.map(d => (
@@ -180,7 +180,7 @@ export function Configuration({ config, onSave, devices, embedded }: Configurati
             id="fps"
             value={detectionFps}
             onChange={e => setDetectionFps(Number(e.target.value))}
-            className="w-full rounded-md border border-zinc-700 bg-zinc-800 px-3 py-2 text-zinc-100 focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
+            className="w-full rounded-md border border-zinc-700 bg-zinc-800 px-3 py-2 text-zinc-100 focus:border-red-500 focus:outline-none focus:ring-1 focus:ring-red-500"
           >
             <option value={1}>1 FPS</option>
             <option value={5}>5 FPS</option>
@@ -203,7 +203,7 @@ export function Configuration({ config, onSave, devices, embedded }: Configurati
             id="captureInterval"
             value={captureIntervalMs}
             onChange={e => setCaptureIntervalMs(Number(e.target.value))}
-            className="w-full rounded-md border border-zinc-700 bg-zinc-800 px-3 py-2 text-zinc-100 focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
+            className="w-full rounded-md border border-zinc-700 bg-zinc-800 px-3 py-2 text-zinc-100 focus:border-red-500 focus:outline-none focus:ring-1 focus:ring-red-500"
           >
             <option value={1000}>1 second</option>
             <option value={2000}>2 seconds</option>
@@ -227,7 +227,7 @@ export function Configuration({ config, onSave, devices, embedded }: Configurati
             </span>
             <span
               className={`flex h-5 w-9 shrink-0 items-center rounded-full px-0.5 transition-colors ${
-                notificationsEnabled ? 'bg-emerald-600' : 'bg-zinc-600'
+                notificationsEnabled ? 'bg-red-600' : 'bg-zinc-600'
               }`}
             >
               <span
@@ -258,7 +258,7 @@ export function Configuration({ config, onSave, devices, embedded }: Configurati
         <button
           type="submit"
           disabled={saving}
-          className="rounded-md bg-emerald-600 px-4 py-2 font-medium text-white hover:bg-emerald-500 disabled:opacity-50"
+          className="rounded-md bg-red-600 px-4 py-2 font-medium text-white hover:bg-red-500 disabled:opacity-50"
         >
           {saving ? 'Saving...' : 'Save'}
         </button>
