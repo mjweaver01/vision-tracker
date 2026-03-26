@@ -1,21 +1,21 @@
 import { join } from 'path';
-import { getSnapshotsDir } from '../recorder';
+import { getClipsDir } from '../recorder';
 
 export const recordingsIdApi = {
   GET: async (req: Request) => {
     const params = (req as Request & { params: { id: string } }).params;
     const id = decodeURIComponent(params.id).replace(
-      /\.(jpg|jpeg|png)$/,
+      /\.(webm|mp4)$/,
       ''
     );
-    const dir = getSnapshotsDir();
-    for (const ext of ['jpg', 'jpeg', 'png']) {
+    const dir = getClipsDir();
+    for (const ext of ['webm', 'mp4']) {
       const filepath = join(dir, `${id}.${ext}`);
       try {
         const file = Bun.file(filepath);
         const exists = await file.exists();
         if (exists) {
-          const contentType = ext === 'png' ? 'image/png' : 'image/jpeg';
+          const contentType = ext === 'mp4' ? 'video/mp4' : 'video/webm';
           return new Response(file, {
             headers: {
               'Content-Type': contentType,

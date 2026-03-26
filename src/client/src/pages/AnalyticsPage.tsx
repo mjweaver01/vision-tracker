@@ -21,10 +21,10 @@ import {
   XAxis,
   YAxis,
 } from 'recharts';
-import type { SnapshotMetadata } from '@shared/types';
+import type { ClipMetadata } from '@shared/types';
 import { api } from '../services';
 import { useRecordingsVersion } from '../lib/recordingsVersion';
-import { SnapshotsList } from '../components/SnapshotsList';
+import { ClipsList } from '../components/SnapshotsList';
 import { useAnalyticsFilters } from '../hooks/useAnalyticsFilters';
 import type {
   ChartView,
@@ -117,16 +117,16 @@ export function AnalyticsPage() {
     toggleVisibleClassification,
   } = useAnalyticsFilters();
 
-  const [snapshots, setSnapshots] = useState<SnapshotMetadata[]>([]);
+  const [clips, setClips] = useState<ClipMetadata[]>([]);
   const [loading, setLoading] = useState(true);
   const [isPending, startTransition] = useTransition();
-  const deferredSnapshots = useDeferredValue(snapshots);
+  const deferredClips = useDeferredValue(clips);
 
-  const fetchSnapshots = useCallback(async () => {
+  const fetchClips = useCallback(async () => {
     try {
-      const data = await api().getSnapshots();
+      const data = await api().getClips();
       startTransition(() => {
-        setSnapshots(data);
+        setClips(data);
       });
     } finally {
       setLoading(false);
@@ -134,11 +134,11 @@ export function AnalyticsPage() {
   }, []);
 
   useEffect(() => {
-    fetchSnapshots();
-  }, [fetchSnapshots, recordingsVersion]);
+    fetchClips();
+  }, [fetchClips, recordingsVersion]);
 
-  const filteredSnapshots = useMemo(() => {
-    let list = deferredSnapshots.filter(r => r.detections.length > 0);
+  const filteredClips = useMemo(() => {
+    let list = deferredClips.filter(r => r.detections.length > 0);
 
     const now = Date.now();
     const ms = {
@@ -158,27 +158,27 @@ export function AnalyticsPage() {
     }
 
     return list;
-  }, [deferredSnapshots, dateRange, classificationFilter]);
+  }, [deferredClips, dateRange, classificationFilter]);
 
-  const listSnapshots = useMemo(() => {
+  const listClips = useMemo(() => {
     if (
       visibleClassifications.size > 0 &&
       classificationFilter === 'all'
     ) {
-      return filteredSnapshots.filter(r =>
+      return filteredClips.filter(r =>
         r.detections.some(c => visibleClassifications.has(c.label))
       );
     }
-    return filteredSnapshots;
-  }, [filteredSnapshots, visibleClassifications, classificationFilter]);
+    return filteredClips;
+  }, [filteredClips, visibleClassifications, classificationFilter]);
 
-  const sortedFilteredSnapshots = useMemo(
+  const sortedFilteredClips = useMemo(
     () =>
-      [...listSnapshots].sort(
+      [...listClips].sort(
         (a, b) =>
           new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
       ),
-    [listSnapshots]
+    [listClips]
   );
 
   const chartData = useMemo(() => {
@@ -187,7 +187,7 @@ export function AnalyticsPage() {
       { count: number; detections: Record<string, number> }
     >();
 
-    for (const r of filteredSnapshots) {
+    for (const r of filteredClips) {
       const key = getBucketKey(r.timestamp, grouping);
       if (!buckets.has(key)) {
         buckets.set(key, { count: 0, detections: {} });
@@ -249,15 +249,15 @@ export function AnalyticsPage() {
       combined.push({ ...merged, ...flat });
     }
     return combined;
-  }, [filteredSnapshots, grouping]);
+  }, [filteredClips, grouping]);
 
   const objectTypes = useMemo(() => {
     const set = new Set<string>();
-    for (const r of deferredSnapshots) {
+    for (const r of deferredClips) {
       for (const c of r.detections) set.add(c.label);
     }
     return Array.from(set).sort();
-  }, [deferredSnapshots]);
+  }, [deferredClips]);
 
   const chartObjectTypes = useMemo(() => {
     const set = new Set<string>();
@@ -283,7 +283,7 @@ export function AnalyticsPage() {
 
   const pieData = useMemo(() => {
     const byClass: Record<string, number> = {};
-    for (const r of filteredSnapshots) {
+    for (const r of filteredClips) {
       for (const c of r.detections) {
         byClass[c.label] = (byClass[c.label] ?? 0) + 1;
       }
@@ -295,12 +295,12 @@ export function AnalyticsPage() {
         value,
         fill: COLORS[i % COLORS.length],
       }));
-  }, [filteredSnapshots]);
+  }, [filteredClips]);
 
   const summary = useMemo(() => {
-    const total = filteredSnapshots.length;
+    const total = filteredClips.length;
     const byClass: Record<string, number> = {};
-    for (const r of filteredSnapshots) {
+    for (const r of filteredClips) {
       for (const c of r.detections) {
         byClass[c.label] = (byClass[c.label] ?? 0) + 1;
       }
@@ -308,13 +308,13 @@ export function AnalyticsPage() {
     const days = dateRange === 'all' ? 0 : parseInt(dateRange, 10);
     const avgPerDay = days > 0 && total > 0 ? (total / days).toFixed(1) : '-';
     return { total, byClass, avgPerDay };
-  }, [filteredSnapshots, dateRange]);
+  }, [filteredClips, dateRange]);
 
   if (loading) {
     return (
       <div className="rounded-lg bg-zinc-900 p-6 ring-1 ring-zinc-700/50">
         <h2 className="mb-4 text-lg font-semibold text-zinc-100">Analytics</h2>
-        <p className="text-zinc-500">Loading snapshots...</p>
+        <p className="text-zinc-500">Loading clips...</p>
       </div>
     );
   }
@@ -324,12 +324,12 @@ export function AnalyticsPage() {
       <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
         <h2 className="text-lg font-semibold text-zinc-100">Analytics</h2>
         <div className="flex items-center gap-2">
-          {(isPending || deferredSnapshots !== snapshots) && (
+          {(isPending || deferredClips !== clips) && (
             <span className="text-xs text-zinc-500">Processing…</span>
           )}
           <button
             type="button"
-            onClick={fetchSnapshots}
+            onClick={fetchClips}
             disabled={loading}
             className="rounded-md border border-zinc-600 px-3 py-1.5 text-sm text-zinc-400 hover:bg-zinc-800 hover:text-zinc-200 disabled:opacity-50"
           >
@@ -470,7 +470,7 @@ export function AnalyticsPage() {
       {/* Summary */}
       <div className="mb-6 grid grid-cols-2 gap-4 sm:grid-cols-4">
         <div className="rounded-md border border-zinc-700 bg-zinc-800/50 px-4 py-3">
-          <p className="text-xs text-zinc-500">Total snapshots</p>
+          <p className="text-xs text-zinc-500">Total clips</p>
           <p className="text-xl font-semibold text-red-400">
             {summary.total}
           </p>
@@ -723,10 +723,10 @@ export function AnalyticsPage() {
         </div>
       )}
 
-      {/* Filtered snapshots list */}
+      {/* Filtered clips list */}
       <div className="mt-6">
-        <SnapshotsList
-          snapshots={sortedFilteredSnapshots}
+        <ClipsList
+          clips={sortedFilteredClips}
           refreshTrigger={recordingsVersion}
           showCount
         />

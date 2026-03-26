@@ -1,6 +1,6 @@
 import { NavLink, useLocation } from 'react-router-dom';
 import { useRecordingsVersion } from '../lib/recordingsVersion';
-import { SnapshotsList } from './SnapshotsList';
+import { ClipsList } from './SnapshotsList';
 import { ANALYTICS_FILTERS_SESSION_KEY } from '../hooks/useAnalyticsFilters';
 
 interface MobileSlideOutProps {
@@ -94,7 +94,7 @@ export function MobileSlideOut({ isOpen, onClose }: MobileSlideOutProps) {
 
         <div className="min-h-0 flex-1 overflow-hidden">
           <div className="h-full overflow-y-auto overscroll-contain px-2 py-4 pb-[env(safe-area-inset-bottom)]">
-            <SnapshotsList
+            <ClipsList
               refreshTrigger={recordingsVersion}
               compact
             />

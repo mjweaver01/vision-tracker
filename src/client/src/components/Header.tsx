@@ -51,7 +51,7 @@ export function Header() {
         <div className="flex shrink-0 items-center gap-2 md:gap-4">
           <StatusIndicator
             connected={status.connected}
-            isCapturing={status.isCapturing}
+            isRecording={status.isRecording}
             error={status.error}
           />
           {!isMobile && (

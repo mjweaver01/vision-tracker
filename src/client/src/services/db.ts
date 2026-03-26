@@ -1,6 +1,6 @@
 const DB_NAME = 'vision-tracker';
-const DB_VERSION = 2;
-const STORE_NAME = 'snapshots';
+const DB_VERSION = 3;
+const STORE_NAME = 'clips';
 
 let dbPromise: Promise<IDBDatabase> | null = null;
 
@@ -10,9 +10,12 @@ function openDb(): Promise<IDBDatabase> {
     const request = indexedDB.open(DB_NAME, DB_VERSION);
     request.onupgradeneeded = () => {
       const db = request.result;
-      // Delete old recordings store if it exists
+      // Delete old stores if they exist
       if (db.objectStoreNames.contains('recordings')) {
         db.deleteObjectStore('recordings');
+      }
+      if (db.objectStoreNames.contains('snapshots')) {
+        db.deleteObjectStore('snapshots');
       }
       if (!db.objectStoreNames.contains(STORE_NAME)) {
         const store = db.createObjectStore(STORE_NAME, { keyPath: 'id' });
@@ -25,16 +28,17 @@ function openDb(): Promise<IDBDatabase> {
   return dbPromise;
 }
 
-export interface SnapshotRecord {
+export interface ClipRecord {
   id: string;
   filename: string;
   timestamp: string;
+  durationSeconds: number;
   detections: { label: string; score: number }[];
   objectCount: number;
-  imageBlob: Blob;
+  videoBlob: Blob;
 }
 
-export async function putSnapshot(record: SnapshotRecord): Promise<void> {
+export async function putClip(record: ClipRecord): Promise<void> {
   const db = await openDb();
   return new Promise((resolve, reject) => {
     const tx = db.transaction(STORE_NAME, 'readwrite');
@@ -44,26 +48,26 @@ export async function putSnapshot(record: SnapshotRecord): Promise<void> {
   });
 }
 
-export async function getSnapshot(id: string): Promise<SnapshotRecord | undefined> {
+export async function getClip(id: string): Promise<ClipRecord | undefined> {
   const db = await openDb();
   return new Promise((resolve, reject) => {
     const tx = db.transaction(STORE_NAME, 'readonly');
     const request = tx.objectStore(STORE_NAME).get(id);
-    request.onsuccess = () => resolve(request.result as SnapshotRecord | undefined);
+    request.onsuccess = () => resolve(request.result as ClipRecord | undefined);
     request.onerror = () => reject(request.error);
   });
 }
 
-export async function getAllSnapshots(): Promise<SnapshotRecord[]> {
+export async function getAllClips(): Promise<ClipRecord[]> {
   const db = await openDb();
   return new Promise((resolve, reject) => {
     const tx = db.transaction(STORE_NAME, 'readonly');
     const request = tx.objectStore(STORE_NAME).index('timestamp').openCursor(null, 'prev');
-    const results: SnapshotRecord[] = [];
+    const results: ClipRecord[] = [];
     request.onsuccess = () => {
       const cursor = request.result;
       if (cursor) {
-        results.push(cursor.value as SnapshotRecord);
+        results.push(cursor.value as ClipRecord);
         cursor.continue();
       } else {
         resolve(results);

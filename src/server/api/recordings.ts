@@ -1,16 +1,18 @@
-import { getSnapshots, saveSnapshot } from '../recorder';
+import { getClips, saveClip } from '../recorder';
 import { logger } from '@shared/logger';
 import type { DetectionResult } from '@shared/types';
 
 export const recordingsApi = {
-  GET: async () => Response.json(await getSnapshots()),
+  GET: async () => Response.json(await getClips()),
   POST: async (req: Request) => {
     const formData = await req.formData();
-    const image = formData.get('image');
+    const video = formData.get('video');
 
-    if (!image || !(image instanceof Blob)) {
-      return new Response('Missing image file', { status: 400 });
+    if (!video || !(video instanceof Blob)) {
+      return new Response('Missing video file', { status: 400 });
     }
+
+    const durationSeconds = parseFloat(String(formData.get('durationSeconds') || '0'));
 
     let detections: DetectionResult[] = [];
     const detectionsStr = formData.get('detections');
@@ -21,8 +23,8 @@ export const recordingsApi = {
         // ignore invalid JSON
       }
     }
-    const meta = await saveSnapshot(image, detections);
-    logger('[VisionTracker] Saved:', meta.filename, meta.objectCount, 'objects');
+    const meta = await saveClip(video, durationSeconds, detections);
+    logger('[VisionTracker] Saved:', meta.filename, meta.durationSeconds.toFixed(1) + 's,', meta.objectCount, 'objects');
     return Response.json(meta);
   },
 };

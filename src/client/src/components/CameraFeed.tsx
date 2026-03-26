@@ -5,10 +5,10 @@ interface CameraFeedProps {
   videoRef: React.RefObject<HTMLVideoElement | null>;
   stream: MediaStream | null;
   detections: DetectionResult[];
-  isCapturing?: boolean;
+  isRecording?: boolean;
 }
 
-export function CameraFeed({ videoRef, stream, detections, isCapturing }: CameraFeedProps) {
+export function CameraFeed({ videoRef, stream, detections, isRecording }: CameraFeedProps) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);
   const rafRef = useRef<number>(0);
@@ -96,7 +96,7 @@ export function CameraFeed({ videoRef, stream, detections, isCapturing }: Camera
     <div
       ref={containerRef}
       className={`relative w-full overflow-hidden rounded-xl bg-zinc-900 ${
-        isCapturing ? 'ring-2 ring-red-500' : ''
+        isRecording ? 'ring-2 ring-red-500' : ''
       }`}
     >
       <video
@@ -111,10 +111,10 @@ export function CameraFeed({ videoRef, stream, detections, isCapturing }: Camera
         ref={canvasRef}
         className="pointer-events-none absolute inset-0 h-full w-full"
       />
-      {isCapturing && (
+      {isRecording && (
         <div className="absolute right-3 top-3 flex items-center gap-2 rounded-full bg-red-600/90 px-3 py-1 text-xs font-medium text-white">
           <span className="h-2 w-2 animate-pulse rounded-full bg-white" />
-          Capturing
+          Recording
         </div>
       )}
     </div>

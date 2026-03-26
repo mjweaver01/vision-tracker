@@ -12,6 +12,9 @@ export const DEFAULT_CONFIG: AppConfig = {
   objectTypes: [],
   captureIntervalMs: 5000,
   detectionFps: 10,
+  preBufferSeconds: 2,
+  postBufferSeconds: 2,
+  maxClipSeconds: 30,
   notificationObjects: [],
   notificationsEnabled: false,
 };

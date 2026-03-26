@@ -15,6 +15,9 @@ export function Configuration({ config, onSave, devices, embedded }: Configurati
   const [confidenceThreshold, setConfidenceThreshold] = useState(config.confidenceThreshold);
   const [objectTypes, setObjectTypes] = useState<string[]>(config.objectTypes);
   const [detectionFps, setDetectionFps] = useState(config.detectionFps);
+  const [preBufferSeconds, setPreBufferSeconds] = useState(config.preBufferSeconds);
+  const [postBufferSeconds, setPostBufferSeconds] = useState(config.postBufferSeconds);
+  const [maxClipSeconds, setMaxClipSeconds] = useState(config.maxClipSeconds);
   const [captureIntervalMs, setCaptureIntervalMs] = useState(config.captureIntervalMs);
   const [notificationsEnabled, setNotificationsEnabled] = useState(config.notificationsEnabled);
   const [notificationObjects, setNotificationObjects] = useState<string[]>(config.notificationObjects);
@@ -26,6 +29,9 @@ export function Configuration({ config, onSave, devices, embedded }: Configurati
     setConfidenceThreshold(config.confidenceThreshold);
     setObjectTypes(config.objectTypes);
     setDetectionFps(config.detectionFps);
+    setPreBufferSeconds(config.preBufferSeconds);
+    setPostBufferSeconds(config.postBufferSeconds);
+    setMaxClipSeconds(config.maxClipSeconds);
     setCaptureIntervalMs(config.captureIntervalMs);
     setDeviceId(config.deviceId ?? '');
     setNotificationsEnabled(config.notificationsEnabled);
@@ -41,6 +47,9 @@ export function Configuration({ config, onSave, devices, embedded }: Configurati
         confidenceThreshold,
         objectTypes,
         detectionFps,
+        preBufferSeconds,
+        postBufferSeconds,
+        maxClipSeconds,
         captureIntervalMs,
         deviceId: deviceId || undefined,
         notificationsEnabled,
@@ -104,6 +113,8 @@ export function Configuration({ config, onSave, devices, embedded }: Configurati
     setNotificationsEnabled(enabled);
   };
 
+  const selectClass = "w-full rounded-md border border-zinc-700 bg-zinc-800 px-3 py-2 text-zinc-100 focus:border-red-500 focus:outline-none focus:ring-1 focus:ring-red-500";
+
   return (
     <form
       onSubmit={handleSubmit}
@@ -117,17 +128,14 @@ export function Configuration({ config, onSave, devices, embedded }: Configurati
       <div className="space-y-4">
         {devices.length > 0 && (
           <div>
-            <label
-              htmlFor="camera"
-              className="mb-1 block text-sm text-zinc-400"
-            >
+            <label htmlFor="camera" className="mb-1 block text-sm text-zinc-400">
               Camera
             </label>
             <select
               id="camera"
               value={deviceId}
               onChange={e => handleDeviceChange(e.target.value)}
-              className="w-full rounded-md border border-zinc-700 bg-zinc-800 px-3 py-2 text-zinc-100 focus:border-red-500 focus:outline-none focus:ring-1 focus:ring-red-500"
+              className={selectClass}
             >
               <option value="">Default</option>
               {devices.map(d => (
@@ -142,10 +150,7 @@ export function Configuration({ config, onSave, devices, embedded }: Configurati
           </div>
         )}
         <div>
-          <label
-            htmlFor="confidence"
-            className="mb-1 block text-sm text-zinc-400"
-          >
+          <label htmlFor="confidence" className="mb-1 block text-sm text-zinc-400">
             Confidence threshold ({Math.round(confidenceThreshold * 100)}%)
           </label>
           <input
@@ -159,7 +164,7 @@ export function Configuration({ config, onSave, devices, embedded }: Configurati
             className="w-full"
           />
           <p className="mt-1 text-xs text-zinc-500">
-            Minimum confidence for object detection to trigger a snapshot
+            Minimum confidence for object detection to trigger recording
           </p>
         </div>
         <ObjectTypeMultiselect
@@ -170,17 +175,14 @@ export function Configuration({ config, onSave, devices, embedded }: Configurati
           placeholder="Search object types..."
         />
         <div>
-          <label
-            htmlFor="fps"
-            className="mb-1 block text-sm text-zinc-400"
-          >
+          <label htmlFor="fps" className="mb-1 block text-sm text-zinc-400">
             Detection FPS
           </label>
           <select
             id="fps"
             value={detectionFps}
             onChange={e => setDetectionFps(Number(e.target.value))}
-            className="w-full rounded-md border border-zinc-700 bg-zinc-800 px-3 py-2 text-zinc-100 focus:border-red-500 focus:outline-none focus:ring-1 focus:ring-red-500"
+            className={selectClass}
           >
             <option value={1}>1 FPS</option>
             <option value={5}>5 FPS</option>
@@ -193,17 +195,73 @@ export function Configuration({ config, onSave, devices, embedded }: Configurati
           </p>
         </div>
         <div>
-          <label
-            htmlFor="captureInterval"
-            className="mb-1 block text-sm text-zinc-400"
-          >
-            Capture interval
+          <label htmlFor="preBuffer" className="mb-1 block text-sm text-zinc-400">
+            Pre-buffer (seconds)
           </label>
           <select
-            id="captureInterval"
+            id="preBuffer"
+            value={preBufferSeconds}
+            onChange={e => setPreBufferSeconds(Number(e.target.value))}
+            className={selectClass}
+          >
+            <option value={0.5}>0.5 seconds</option>
+            <option value={1}>1 second</option>
+            <option value={2}>2 seconds</option>
+            <option value={3}>3 seconds</option>
+            <option value={5}>5 seconds</option>
+          </select>
+          <p className="mt-1 text-xs text-zinc-500">
+            Video captured before the detection trigger so you see what led up to the event
+          </p>
+        </div>
+        <div>
+          <label htmlFor="postBuffer" className="mb-1 block text-sm text-zinc-400">
+            Post-buffer (seconds)
+          </label>
+          <select
+            id="postBuffer"
+            value={postBufferSeconds}
+            onChange={e => setPostBufferSeconds(Number(e.target.value))}
+            className={selectClass}
+          >
+            <option value={0.5}>0.5 seconds</option>
+            <option value={1}>1 second</option>
+            <option value={2}>2 seconds</option>
+            <option value={3}>3 seconds</option>
+            <option value={5}>5 seconds</option>
+          </select>
+          <p className="mt-1 text-xs text-zinc-500">
+            Recording stops after objects disappear for this long
+          </p>
+        </div>
+        <div>
+          <label htmlFor="maxClip" className="mb-1 block text-sm text-zinc-400">
+            Max clip duration
+          </label>
+          <select
+            id="maxClip"
+            value={maxClipSeconds}
+            onChange={e => setMaxClipSeconds(Number(e.target.value))}
+            className={selectClass}
+          >
+            <option value={10}>10 seconds</option>
+            <option value={15}>15 seconds</option>
+            <option value={30}>30 seconds</option>
+            <option value={60}>60 seconds</option>
+          </select>
+          <p className="mt-1 text-xs text-zinc-500">
+            Safety cap to prevent very long recordings
+          </p>
+        </div>
+        <div>
+          <label htmlFor="cooldown" className="mb-1 block text-sm text-zinc-400">
+            Cooldown between clips
+          </label>
+          <select
+            id="cooldown"
             value={captureIntervalMs}
             onChange={e => setCaptureIntervalMs(Number(e.target.value))}
-            className="w-full rounded-md border border-zinc-700 bg-zinc-800 px-3 py-2 text-zinc-100 focus:border-red-500 focus:outline-none focus:ring-1 focus:ring-red-500"
+            className={selectClass}
           >
             <option value={1000}>1 second</option>
             <option value={2000}>2 seconds</option>
@@ -213,7 +271,7 @@ export function Configuration({ config, onSave, devices, embedded }: Configurati
             <option value={60000}>1 minute</option>
           </select>
           <p className="mt-1 text-xs text-zinc-500">
-            Minimum time between snapshot captures
+            Minimum wait time after a clip finishes before starting a new one
           </p>
         </div>
         <div className="space-y-3 rounded-lg border border-zinc-700 bg-zinc-800/50 p-2">

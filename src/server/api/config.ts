@@ -15,6 +15,9 @@ export const configApi = {
       'confidenceThreshold',
       'captureIntervalMs',
       'detectionFps',
+      'preBufferSeconds',
+      'postBufferSeconds',
+      'maxClipSeconds',
     ] as const satisfies readonly (keyof AppConfig)[];
     for (const key of numKeys) {
       const val = body[key];

@@ -27,6 +27,18 @@ function parseConfig(data: unknown): AppConfig {
       typeof d?.detectionFps === 'number'
         ? d.detectionFps
         : DEFAULT_CONFIG.detectionFps,
+    preBufferSeconds:
+      typeof d?.preBufferSeconds === 'number'
+        ? d.preBufferSeconds
+        : DEFAULT_CONFIG.preBufferSeconds,
+    postBufferSeconds:
+      typeof d?.postBufferSeconds === 'number'
+        ? d.postBufferSeconds
+        : DEFAULT_CONFIG.postBufferSeconds,
+    maxClipSeconds:
+      typeof d?.maxClipSeconds === 'number'
+        ? d.maxClipSeconds
+        : DEFAULT_CONFIG.maxClipSeconds,
     notificationObjects: Array.isArray(d?.notificationObjects)
       ? d.notificationObjects
       : DEFAULT_CONFIG.notificationObjects,
@@ -42,6 +54,9 @@ const APP_CONFIG_KEYS = [
   'objectTypes',
   'captureIntervalMs',
   'detectionFps',
+  'preBufferSeconds',
+  'postBufferSeconds',
+  'maxClipSeconds',
   'deviceId',
 ] as const;
 

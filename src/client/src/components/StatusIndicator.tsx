@@ -1,19 +1,19 @@
 interface StatusIndicatorProps {
   connected: boolean;
-  isCapturing: boolean;
+  isRecording: boolean;
   error?: string | null;
 }
 
 export function StatusIndicator({
   connected,
-  isCapturing,
+  isRecording,
   error,
 }: StatusIndicatorProps) {
   return (
     <div className="flex items-center gap-2">
       <span
         className={`h-2 w-2 shrink-0 rounded-full ${
-          isCapturing
+          isRecording
             ? 'bg-red-500 opacity-100 animate-pulse'
             : error
               ? 'bg-red-500'
@@ -24,7 +24,7 @@ export function StatusIndicator({
         title={connected ? 'Live' : 'Off'}
       />
       <span className="text-sm text-zinc-400">
-        {error ? 'Error' : connected ? 'Live' : 'Off'}
+        {error ? 'Error' : isRecording ? 'Recording' : connected ? 'Live' : 'Off'}
       </span>
     </div>
   );

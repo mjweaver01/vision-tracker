@@ -6,6 +6,8 @@ import { initRecorder } from './recorder';
 import { configApi } from './api/config';
 import { recordingsApi } from './api/recordings';
 import { recordingsIdApi } from './api/recordings-id';
+import { customObjectsApi, customObjectIdApi } from './api/custom-objects';
+import { initCustomObjects } from './customObjects';
 
 const certPath = join(import.meta.dir, '..', '..', 'certs', 'cert.pem');
 const keyPath = join(import.meta.dir, '..', '..', 'certs', 'key.pem');
@@ -26,6 +28,8 @@ const server = Bun.serve({
     '/api/config': configApi,
     '/api/recordings': recordingsApi,
     '/api/recordings/:id': recordingsIdApi,
+    '/api/custom-objects': customObjectsApi,
+    '/api/custom-objects/:id': customObjectIdApi,
   },
   async fetch(req) {
     const pathname = new URL(req.url).pathname;
@@ -53,6 +57,7 @@ const server = Bun.serve({
 
 await loadConfig();
 await initRecorder();
+initCustomObjects();
 
 const protocol = useTls ? 'https' : 'http';
 console.log(`

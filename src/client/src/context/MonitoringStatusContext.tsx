@@ -6,7 +6,7 @@ import {
   useState,
   type ReactNode,
 } from 'react';
-import type { AppConfig, DetectionResult } from '@shared/types';
+import type { AppConfig, CustomObject, DetectionResult } from '@shared/types';
 import { DEFAULT_CONFIG } from '@shared/constants';
 import { api } from '../services';
 import {
@@ -37,13 +37,13 @@ function setStoredCameraEnabled(v: boolean) {
 
 interface MonitoringStatus {
   connected: boolean;
-  isCapturing: boolean;
+  isRecording: boolean;
   error: string | null;
 }
 
 const defaultStatus: MonitoringStatus = {
   connected: false,
-  isCapturing: false,
+  isRecording: false,
   error: null,
 };
 
@@ -53,7 +53,7 @@ interface MonitoringContextValue {
   cameraEnabled: boolean;
   setCameraEnabled: (v: boolean) => void;
   detections: DetectionResult[];
-  isCapturing: boolean;
+  isRecording: boolean;
   error: string | null;
   stream: MediaStream | null;
   lastDetection: string | null;
@@ -62,6 +62,8 @@ interface MonitoringContextValue {
   config: AppConfig;
   setConfig: (c: AppConfig) => void;
   handleSaveConfig: (updates: Partial<AppConfig>) => Promise<void>;
+  customObjects: CustomObject[];
+  refreshCustomObjects: () => void;
 }
 
 const MonitoringStatusContext = createContext<MonitoringContextValue | null>(
@@ -78,32 +80,46 @@ export function MonitoringStatusProvider({
   const [config, setConfig] = useState<AppConfig>(() => ({
     ...DEFAULT_CONFIG,
   }));
+  const [customObjects, setCustomObjects] = useState<CustomObject[]>([]);
+  const [customObjectsVersion, setCustomObjectsVersion] = useState(0);
+
+  const refreshCustomObjects = useCallback(() => {
+    setCustomObjectsVersion(v => v + 1);
+  }, []);
+
+  useEffect(() => {
+    api().getCustomObjects().then(setCustomObjects).catch(() => {});
+  }, [customObjectsVersion]);
 
   const setCameraEnabled = useCallback((v: boolean) => {
     setCameraEnabledState(v);
     setStoredCameraEnabled(v);
   }, []);
 
-  const { detections, isCapturing, error, stream, lastDetection, devices, videoRef } =
+  const { detections, isRecording, error, stream, lastDetection, devices, videoRef } =
     useVisionCapture({
       confidenceThreshold: config.confidenceThreshold,
       enabled: cameraEnabled,
-      onSnapshotUploaded: incrementRecordingsVersion,
+      onClipUploaded: incrementRecordingsVersion,
       objectTypes: config.objectTypes ?? [],
       detectionFps: config.detectionFps ?? 10,
       captureIntervalMs: config.captureIntervalMs ?? 5000,
+      preBufferSeconds: config.preBufferSeconds ?? 2,
+      postBufferSeconds: config.postBufferSeconds ?? 2,
+      maxClipSeconds: config.maxClipSeconds ?? 30,
       deviceId: config.deviceId || undefined,
       notificationObjects: config.notificationObjects ?? [],
       notificationsEnabled: config.notificationsEnabled ?? false,
+      customObjects,
     });
 
   useEffect(() => {
     setStatus({
       connected: cameraEnabled && !error,
-      isCapturing,
+      isRecording,
       error: error ?? null,
     });
-  }, [cameraEnabled, isCapturing, error, setStatus]);
+  }, [cameraEnabled, isRecording, error, setStatus]);
 
   useEffect(() => {
     api().getConfig().then(setConfig).catch(() => {});
@@ -129,7 +145,7 @@ export function MonitoringStatusProvider({
     cameraEnabled,
     setCameraEnabled,
     detections,
-    isCapturing,
+    isRecording,
     error,
     stream,
     lastDetection,
@@ -138,6 +154,8 @@ export function MonitoringStatusProvider({
     config,
     setConfig,
     handleSaveConfig,
+    customObjects,
+    refreshCustomObjects,
   };
 
   return (
