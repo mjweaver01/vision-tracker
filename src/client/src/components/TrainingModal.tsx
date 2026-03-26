@@ -10,6 +10,8 @@ interface TrainingModalProps {
   videoRef: React.RefObject<HTMLVideoElement | null>;
   /** If provided, pre-fills as a refinement of this COCO detection */
   detection?: DetectionResult | null;
+  /** If provided, add examples to this existing object instead of creating new */
+  existingObject?: CustomObject | null;
   onObjectSaved: () => void;
 }
 
@@ -18,6 +20,7 @@ export function TrainingModal({
   onClose,
   videoRef,
   detection,
+  existingObject,
   onObjectSaved,
 }: TrainingModalProps) {
   const [label, setLabel] = useState('');
@@ -41,7 +44,11 @@ export function TrainingModal({
     setPreviews([]);
     setError(null);
     setSaving(false);
-    if (detection) {
+    if (existingObject) {
+      setLabel(existingObject.label);
+      setBaseClass(existingObject.baseClass);
+      setMode(existingObject.baseClass ? 'coco' : 'new');
+    } else if (detection) {
       setMode('coco');
       setBaseClass(detection.label);
       setLabel('');
@@ -50,7 +57,7 @@ export function TrainingModal({
       setBaseClass(null);
       setLabel('');
     }
-  }, [isOpen, detection]);
+  }, [isOpen, detection, existingObject]);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -137,16 +144,21 @@ export function TrainingModal({
   };
 
   const handleSave = async () => {
-    if (!label.trim() || embeddings.length === 0) return;
+    if (embeddings.length === 0) return;
+    if (!existingObject && !label.trim()) return;
     setSaving(true);
     setError(null);
     try {
-      await api().saveCustomObject({
-        label: label.trim(),
-        baseClass: mode === 'coco' ? baseClass : null,
-        embeddings,
-        matchThreshold: 0.6,
-      });
+      if (existingObject) {
+        await api().addExamples(existingObject.id, embeddings);
+      } else {
+        await api().saveCustomObject({
+          label: label.trim(),
+          baseClass: mode === 'coco' ? baseClass : null,
+          embeddings,
+          matchThreshold: 0.6,
+        });
+      }
       onObjectSaved();
       onClose();
     } catch (err) {
@@ -175,7 +187,7 @@ export function TrainingModal({
       >
         <div className="sticky top-0 z-10 flex items-center justify-between border-b border-zinc-700/50 bg-zinc-900 px-4 py-3 sm:px-6">
           <h2 className="text-lg font-semibold text-zinc-100">
-            {detection ? 'Teach Custom Label' : 'Teach New Object'}
+            {existingObject ? `Add Examples to "${existingObject.label}"` : detection ? 'Teach Custom Label' : 'Teach New Object'}
           </h2>
           <button
             type="button"
@@ -191,7 +203,7 @@ export function TrainingModal({
 
         <div className="p-4 sm:p-6 space-y-4">
           {/* Mode selector */}
-          {!detection && (
+          {!detection && !existingObject && (
             <div className="flex gap-2">
               <button
                 type="button"
@@ -215,7 +227,7 @@ export function TrainingModal({
           )}
 
           {/* Base class selector for COCO relabeling */}
-          {mode === 'coco' && !detection && (
+          {mode === 'coco' && !detection && !existingObject && (
             <div>
               <label className="mb-1 block text-sm text-zinc-400">Base COCO class</label>
               <select
@@ -234,14 +246,20 @@ export function TrainingModal({
             </div>
           )}
 
-          {detection && (
+          {detection && !existingObject && (
             <p className="text-sm text-zinc-400">
               When a <span className="font-medium text-red-400">{detection.label}</span> is detected, check if it matches your custom label instead.
             </p>
           )}
 
+          {existingObject && (
+            <p className="text-sm text-zinc-400">
+              Adding more examples to <span className="font-medium text-red-400">{existingObject.label}</span> ({existingObject.exampleCount} existing examples)
+            </p>
+          )}
+
           {/* Label input */}
-          <div>
+          {!existingObject && <div>
             <label className="mb-1 block text-sm text-zinc-400">Custom label name</label>
             <input
               type="text"
@@ -250,7 +268,7 @@ export function TrainingModal({
               placeholder={detection ? `e.g., "Michael" instead of "${detection.label}"` : 'e.g., "My coffee mug"'}
               className="w-full rounded-md border border-zinc-700 bg-zinc-800 px-3 py-2 text-zinc-100 focus:border-red-500 focus:outline-none"
             />
-          </div>
+          </div>}
 
           {/* Capture instructions */}
           <div className="rounded-lg border border-zinc-700 bg-zinc-800/50 p-3">
@@ -265,7 +283,7 @@ export function TrainingModal({
             </p>
 
             <div className="flex gap-2 flex-wrap">
-              {(mode === 'coco' || detection) && detection?.boundingBox && (
+              {detection?.boundingBox && (
                 <button
                   type="button"
                   onClick={captureFromDetection}
@@ -275,7 +293,7 @@ export function TrainingModal({
                   {capturing ? 'Capturing...' : 'Capture from Detection'}
                 </button>
               )}
-              {mode === 'new' && !detection && (
+              {(mode === 'new' || existingObject || !detection) && (
                 <>
                   <button
                     type="button"
@@ -350,7 +368,9 @@ export function TrainingModal({
             disabled={saving || !label.trim() || embeddings.length === 0}
             className="w-full rounded-lg bg-red-600 px-4 py-3 font-medium text-white hover:bg-red-500 disabled:opacity-50"
           >
-            {saving ? 'Saving...' : `Save "${label || '...'}" (${embeddings.length} examples)`}
+            {saving ? 'Saving...' : existingObject
+              ? `Add ${embeddings.length} example${embeddings.length !== 1 ? 's' : ''} to "${existingObject.label}"`
+              : `Save "${label || '...'}" (${embeddings.length} examples)`}
           </button>
           <p className="text-xs text-zinc-500 text-center">
             More examples from different angles = better recognition. 3-5 minimum recommended.

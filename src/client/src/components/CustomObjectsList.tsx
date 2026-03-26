@@ -5,9 +5,10 @@ import { api } from '../services';
 interface CustomObjectsListProps {
   refreshTrigger: number;
   onObjectsChange?: (objects: CustomObject[]) => void;
+  onTrain?: (obj: CustomObject) => void;
 }
 
-export function CustomObjectsList({ refreshTrigger, onObjectsChange }: CustomObjectsListProps) {
+export function CustomObjectsList({ refreshTrigger, onObjectsChange, onTrain }: CustomObjectsListProps) {
   const [objects, setObjects] = useState<CustomObject[]>([]);
 
   const fetch = useCallback(async () => {
@@ -42,13 +43,24 @@ export function CustomObjectsList({ refreshTrigger, onObjectsChange }: CustomObj
                 {obj.baseClass ? `Refines "${obj.baseClass}"` : 'New object'} · {obj.exampleCount} examples
               </p>
             </div>
-            <button
-              type="button"
-              onClick={() => handleDelete(obj.id)}
-              className="ml-2 shrink-0 rounded-lg px-2 py-1 text-xs text-zinc-500 hover:bg-zinc-700 hover:text-red-400"
-            >
-              Delete
-            </button>
+            <div className="ml-2 flex shrink-0 items-center gap-1.5">
+              {onTrain && (
+                <button
+                  type="button"
+                  onClick={() => onTrain(obj)}
+                  className="rounded-lg px-2 py-1 text-xs text-red-400 hover:bg-red-500/20"
+                >
+                  + Examples
+                </button>
+              )}
+              <button
+                type="button"
+                onClick={() => handleDelete(obj.id)}
+                className="rounded-lg px-2 py-1 text-xs text-zinc-500 hover:bg-zinc-700 hover:text-red-400"
+              >
+                Delete
+              </button>
+            </div>
           </div>
         ))}
       </div>

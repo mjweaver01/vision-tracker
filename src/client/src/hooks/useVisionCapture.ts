@@ -70,8 +70,9 @@ export function useVisionCapture(options: UseVisionCaptureOptions): UseVisionCap
   enabledRef.current = enabled;
   optionsRef.current = options;
 
-  // Embedding lock to prevent overlapping async embedding calls
+  // Embedding lock and last result to prevent COCO labels overwriting custom labels
   const embeddingInFlightRef = useRef(false);
+  const lastEnhancedRef = useRef<DetectionResult[]>([]);
 
   // Pre-buffer: a continuously running recorder that we stop to grab recent video
   const preRecorderRef = useRef<MediaRecorder | null>(null);
@@ -417,22 +418,29 @@ export function useVisionCapture(options: UseVisionCaptureOptions): UseVisionCap
             ? mapped.filter(d => types.includes(d.label))
             : mapped;
 
-          // Set COCO detections immediately (custom matching runs async below)
-          setDetections(filtered);
-
-          // Custom object matching runs async, updates detections when done
+          // Custom object matching: run async, only set detections once resolved
           const customObjs = opts.customObjects ?? [];
-          if (customObjs.length > 0 && video && !embeddingInFlightRef.current) {
-            embeddingInFlightRef.current = true;
-            matchCustomObjects(filtered, customObjs, video).then(enhanced => {
-              embeddingInFlightRef.current = false;
-              if (enhanced !== filtered) {
+          if (customObjs.length > 0 && video) {
+            if (!embeddingInFlightRef.current) {
+              embeddingInFlightRef.current = true;
+              matchCustomObjects(filtered, customObjs, video).then(enhanced => {
+                embeddingInFlightRef.current = false;
+                lastEnhancedRef.current = enhanced;
                 setDetections(enhanced);
-              }
-            }).catch(() => { embeddingInFlightRef.current = false; });
+              }).catch(() => {
+                embeddingInFlightRef.current = false;
+                setDetections(filtered);
+              });
+            }
+            // While embedding is in flight, don't overwrite with raw COCO labels
+          } else {
+            setDetections(filtered);
           }
 
-          const enhanced = filtered;
+          // Use last enhanced result for recording logic (or filtered if no custom objects)
+          const enhanced = customObjs.length > 0 && lastEnhancedRef.current.length > 0
+            ? lastEnhancedRef.current
+            : filtered;
 
           const hasObjects = enhanced.length > 0;
 

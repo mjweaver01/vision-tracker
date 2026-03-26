@@ -6,7 +6,7 @@ import { CameraFeed } from '../components/CameraFeed';
 import { ClipsList } from '../components/SnapshotsList';
 import { TrainingModal } from '../components/TrainingModal';
 import { CustomObjectsList } from '../components/CustomObjectsList';
-import type { DetectionResult } from '@shared/types';
+import type { CustomObject, DetectionResult } from '@shared/types';
 
 export function MonitorPage() {
   const {
@@ -26,15 +26,24 @@ export function MonitorPage() {
 
   const [trainingOpen, setTrainingOpen] = useState(false);
   const [trainingDetection, setTrainingDetection] = useState<DetectionResult | null>(null);
+  const [trainingExisting, setTrainingExisting] = useState<CustomObject | null>(null);
   const [customObjectsVersion, setCustomObjectsVersion] = useState(0);
 
   const handleTrainDetection = (det: DetectionResult) => {
     setTrainingDetection(det);
+    setTrainingExisting(null);
     setTrainingOpen(true);
   };
 
   const handleTrainNew = () => {
     setTrainingDetection(null);
+    setTrainingExisting(null);
+    setTrainingOpen(true);
+  };
+
+  const handleTrainExisting = (obj: CustomObject) => {
+    setTrainingDetection(null);
+    setTrainingExisting(obj);
     setTrainingOpen(true);
   };
 
@@ -148,6 +157,7 @@ export function MonitorPage() {
           <CustomObjectsList
             refreshTrigger={customObjectsVersion}
             onObjectsChange={() => refreshCustomObjects()}
+            onTrain={handleTrainExisting}
           />
           <ClipsList refreshTrigger={recordingsVersion} />
         </>
@@ -158,6 +168,7 @@ export function MonitorPage() {
         onClose={() => setTrainingOpen(false)}
         videoRef={videoRef}
         detection={trainingDetection}
+        existingObject={trainingExisting}
         onObjectSaved={handleObjectSaved}
       />
     </>
