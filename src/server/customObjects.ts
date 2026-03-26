@@ -33,7 +33,9 @@ export function initCustomObjects(): void {
 export function getCustomObjects(): CustomObject[] {
   const database = getDb();
   const rows = database
-    .query('SELECT id, label, base_class, embeddings, example_count, match_threshold, created_at FROM custom_objects ORDER BY label')
+    .query(
+      'SELECT id, label, base_class, embeddings, example_count, match_threshold, created_at FROM custom_objects ORDER BY label'
+    )
     .all() as {
     id: string;
     label: string;
@@ -65,19 +67,26 @@ export function saveCustomObject(obj: {
   const id = crypto.randomUUID();
   const now = new Date().toISOString();
 
-  database.prepare(
-    'INSERT INTO custom_objects (id, label, base_class, embeddings, example_count, match_threshold, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)'
-  ).run(
-    id,
-    obj.label,
-    obj.baseClass,
-    JSON.stringify(obj.embeddings),
-    obj.embeddings.length,
-    obj.matchThreshold ?? 0.6,
-    now
-  );
+  database
+    .prepare(
+      'INSERT INTO custom_objects (id, label, base_class, embeddings, example_count, match_threshold, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)'
+    )
+    .run(
+      id,
+      obj.label,
+      obj.baseClass,
+      JSON.stringify(obj.embeddings),
+      obj.embeddings.length,
+      obj.matchThreshold ?? 0.6,
+      now
+    );
 
-  logger('[VisionTracker] Custom object saved:', obj.label, obj.embeddings.length, 'examples');
+  logger(
+    '[VisionTracker] Custom object saved:',
+    obj.label,
+    obj.embeddings.length,
+    'examples'
+  );
 
   return {
     id,
@@ -90,17 +99,24 @@ export function saveCustomObject(obj: {
   };
 }
 
-export function addExamplesToObject(id: string, newEmbeddings: number[][]): CustomObject | null {
+export function addExamplesToObject(
+  id: string,
+  newEmbeddings: number[][]
+): CustomObject | null {
   const database = getDb();
-  const row = database.query('SELECT embeddings FROM custom_objects WHERE id = ?').get(id) as { embeddings: string } | null;
+  const row = database
+    .query('SELECT embeddings FROM custom_objects WHERE id = ?')
+    .get(id) as { embeddings: string } | null;
   if (!row) return null;
 
   const existing = JSON.parse(row.embeddings) as number[][];
   const combined = [...existing, ...newEmbeddings];
 
-  database.prepare(
-    'UPDATE custom_objects SET embeddings = ?, example_count = ? WHERE id = ?'
-  ).run(JSON.stringify(combined), combined.length, id);
+  database
+    .prepare(
+      'UPDATE custom_objects SET embeddings = ?, example_count = ? WHERE id = ?'
+    )
+    .run(JSON.stringify(combined), combined.length, id);
 
   const objs = getCustomObjects();
   return objs.find(o => o.id === id) ?? null;
@@ -108,6 +124,8 @@ export function addExamplesToObject(id: string, newEmbeddings: number[][]): Cust
 
 export function deleteCustomObject(id: string): boolean {
   const database = getDb();
-  const result = database.prepare('DELETE FROM custom_objects WHERE id = ?').run(id);
+  const result = database
+    .prepare('DELETE FROM custom_objects WHERE id = ?')
+    .run(id);
   return result.changes > 0;
 }

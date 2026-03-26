@@ -37,7 +37,9 @@ interface UseVisionCaptureResult {
   devices: MediaDeviceInfo[];
 }
 
-export function useVisionCapture(options: UseVisionCaptureOptions): UseVisionCaptureResult {
+export function useVisionCapture(
+  options: UseVisionCaptureOptions
+): UseVisionCaptureResult {
   const {
     confidenceThreshold,
     enabled,
@@ -70,9 +72,9 @@ export function useVisionCapture(options: UseVisionCaptureOptions): UseVisionCap
   enabledRef.current = enabled;
   optionsRef.current = options;
 
-  // Embedding lock and last result to prevent COCO labels overwriting custom labels
+  // Embedding lock and cached label remapping from custom object matching
   const embeddingInFlightRef = useRef(false);
-  const lastEnhancedRef = useRef<DetectionResult[]>([]);
+  const customLabelMapRef = useRef<Map<string, string>>(new Map());
 
   // Pre-buffer: a continuously running recorder that we stop to grab recent video
   const preRecorderRef = useRef<MediaRecorder | null>(null);
@@ -92,20 +94,25 @@ export function useVisionCapture(options: UseVisionCaptureOptions): UseVisionCap
   const getMimeType = useCallback(() => {
     if (MediaRecorder.isTypeSupported('video/webm;codecs=vp9'))
       return 'video/webm;codecs=vp9';
-    if (MediaRecorder.isTypeSupported('video/webm'))
-      return 'video/webm';
+    if (MediaRecorder.isTypeSupported('video/webm')) return 'video/webm';
     return 'video/mp4';
   }, []);
 
   // Enumerate camera devices
   useEffect(() => {
-    navigator.mediaDevices.enumerateDevices().then(devs => {
-      setDevices(
-        devs
-          .filter(d => d.kind === 'videoinput')
-          .map(d => ({ deviceId: d.deviceId, label: d.label || `Camera ${d.deviceId.slice(0, 8)}` }))
-      );
-    }).catch(() => {});
+    navigator.mediaDevices
+      .enumerateDevices()
+      .then(devs => {
+        setDevices(
+          devs
+            .filter(d => d.kind === 'videoinput')
+            .map(d => ({
+              deviceId: d.deviceId,
+              label: d.label || `Camera ${d.deviceId.slice(0, 8)}`,
+            }))
+        );
+      })
+      .catch(() => {});
   }, [stream]);
 
   // Start/stop camera stream
@@ -127,26 +134,31 @@ export function useVisionCapture(options: UseVisionCaptureOptions): UseVisionCap
         : { facingMode: 'environment' },
     };
 
-    navigator.mediaDevices.getUserMedia(constraints).then(mediaStream => {
-      if (cancelled) {
-        mediaStream.getTracks().forEach(t => t.stop());
-        return;
-      }
-      setStream(mediaStream);
-      setError(null);
-      if (videoRef.current) {
-        videoRef.current.srcObject = mediaStream;
-      }
-    }).catch(err => {
-      if (!cancelled) {
-        logger('[VisionTracker] Camera error:', err);
-        setError(err.name === 'NotAllowedError'
-          ? 'Camera access denied. Allow camera access and reload.'
-          : err.name === 'NotFoundError'
-            ? 'No camera found.'
-            : `Camera error: ${err.message}`);
-      }
-    });
+    navigator.mediaDevices
+      .getUserMedia(constraints)
+      .then(mediaStream => {
+        if (cancelled) {
+          mediaStream.getTracks().forEach(t => t.stop());
+          return;
+        }
+        setStream(mediaStream);
+        setError(null);
+        if (videoRef.current) {
+          videoRef.current.srcObject = mediaStream;
+        }
+      })
+      .catch(err => {
+        if (!cancelled) {
+          logger('[VisionTracker] Camera error:', err);
+          setError(
+            err.name === 'NotAllowedError'
+              ? 'Camera access denied. Allow camera access and reload.'
+              : err.name === 'NotFoundError'
+                ? 'No camera found.'
+                : `Camera error: ${err.message}`
+          );
+        }
+      });
 
     return () => {
       cancelled = true;
@@ -172,7 +184,7 @@ export function useVisionCapture(options: UseVisionCaptureOptions): UseVisionCap
         videoBitsPerSecond: 2_500_000,
       });
       preChunksRef.current = [];
-      recorder.ondataavailable = (e) => {
+      recorder.ondataavailable = e => {
         if (e.data.size > 0) {
           preChunksRef.current.push(e.data);
         }
@@ -187,8 +199,15 @@ export function useVisionCapture(options: UseVisionCaptureOptions): UseVisionCap
   // Manage pre-buffer recorder lifecycle
   useEffect(() => {
     if (!stream || !enabled) {
-      if (preRecorderRef.current && preRecorderRef.current.state !== 'inactive') {
-        try { preRecorderRef.current.stop(); } catch { /* ignore */ }
+      if (
+        preRecorderRef.current &&
+        preRecorderRef.current.state !== 'inactive'
+      ) {
+        try {
+          preRecorderRef.current.stop();
+        } catch {
+          /* ignore */
+        }
       }
       preRecorderRef.current = null;
       preChunksRef.current = [];
@@ -198,20 +217,34 @@ export function useVisionCapture(options: UseVisionCaptureOptions): UseVisionCap
     startPreRecorder();
 
     // Periodically restart pre-recorder to limit memory (keep last preBufferSeconds)
-    const restartInterval = setInterval(() => {
-      if (recordingStateRef.current !== 'idle') return; // don't restart during recording
-      const old = preRecorderRef.current;
-      if (old && old.state !== 'inactive') {
-        try { old.stop(); } catch { /* ignore */ }
-      }
-      // Old chunks are discarded, start fresh
-      startPreRecorder();
-    }, Math.max(preBufferSeconds * 1000, 3000));
+    const restartInterval = setInterval(
+      () => {
+        if (recordingStateRef.current !== 'idle') return; // don't restart during recording
+        const old = preRecorderRef.current;
+        if (old && old.state !== 'inactive') {
+          try {
+            old.stop();
+          } catch {
+            /* ignore */
+          }
+        }
+        // Old chunks are discarded, start fresh
+        startPreRecorder();
+      },
+      Math.max(preBufferSeconds * 1000, 3000)
+    );
 
     return () => {
       clearInterval(restartInterval);
-      if (preRecorderRef.current && preRecorderRef.current.state !== 'inactive') {
-        try { preRecorderRef.current.stop(); } catch { /* ignore */ }
+      if (
+        preRecorderRef.current &&
+        preRecorderRef.current.state !== 'inactive'
+      ) {
+        try {
+          preRecorderRef.current.stop();
+        } catch {
+          /* ignore */
+        }
       }
       preRecorderRef.current = null;
       preChunksRef.current = [];
@@ -219,41 +252,57 @@ export function useVisionCapture(options: UseVisionCaptureOptions): UseVisionCap
   }, [stream, enabled, preBufferSeconds, startPreRecorder]);
 
   // Send notification
-  const notify = useCallback((label: string) => {
-    if (!notificationsEnabled || notificationObjects.length === 0) return;
-    if (!notificationObjects.includes(label)) return;
-    if (Notification.permission === 'granted') {
-      new Notification('Vision Tracker', { body: `Detected: ${label}` });
-    } else if (Notification.permission !== 'denied') {
-      Notification.requestPermission();
-    }
-  }, [notificationsEnabled, notificationObjects]);
+  const notify = useCallback(
+    (label: string) => {
+      if (!notificationsEnabled || notificationObjects.length === 0) return;
+      if (!notificationObjects.includes(label)) return;
+      if (Notification.permission === 'granted') {
+        new Notification('Vision Tracker', { body: `Detected: ${label}` });
+      } else if (Notification.permission !== 'denied') {
+        Notification.requestPermission();
+      }
+    },
+    [notificationsEnabled, notificationObjects]
+  );
 
   // Upload the recorded clip
-  const uploadClip = useCallback(async (preBlob: Blob | null, activeBlob: Blob, allDetections: DetectionResult[], durationSeconds: number) => {
-    try {
-      // Combine pre-buffer + active recording into one playable file
-      // Both are complete WebM files; we upload the active recording which has proper headers
-      // Pre-buffer is a separate complete file; for simplicity we combine as the active recording
-      // which started when detection began
-      const blob = activeBlob;
+  const uploadClip = useCallback(
+    async (
+      preBlob: Blob | null,
+      activeBlob: Blob,
+      allDetections: DetectionResult[],
+      durationSeconds: number
+    ) => {
+      try {
+        // Combine pre-buffer + active recording into one playable file
+        // Both are complete WebM files; we upload the active recording which has proper headers
+        // Pre-buffer is a separate complete file; for simplicity we combine as the active recording
+        // which started when detection began
+        const blob = activeBlob;
 
-      // Deduplicate detections by label, keeping highest score
-      const deduped = new Map<string, DetectionResult>();
-      for (const d of allDetections) {
-        const existing = deduped.get(d.label);
-        if (!existing || d.score > existing.score) {
-          deduped.set(d.label, d);
+        // Deduplicate detections by label, keeping highest score
+        const deduped = new Map<string, DetectionResult>();
+        for (const d of allDetections) {
+          const existing = deduped.get(d.label);
+          if (!existing || d.score > existing.score) {
+            deduped.set(d.label, d);
+          }
         }
+        const detections = Array.from(deduped.values());
+        await api().saveClip(blob, durationSeconds, detections);
+        logger(
+          '[VisionTracker] Clip uploaded:',
+          durationSeconds.toFixed(1) + 's,',
+          detections.length,
+          'object types'
+        );
+        onClipUploaded?.();
+      } catch (err) {
+        logger('[VisionTracker] Clip upload error:', err);
       }
-      const detections = Array.from(deduped.values());
-      await api().saveClip(blob, durationSeconds, detections);
-      logger('[VisionTracker] Clip uploaded:', durationSeconds.toFixed(1) + 's,', detections.length, 'object types');
-      onClipUploaded?.();
-    } catch (err) {
-      logger('[VisionTracker] Clip upload error:', err);
-    }
-  }, [onClipUploaded]);
+    },
+    [onClipUploaded]
+  );
 
   // Start active recording
   const startActiveRecording = useCallback(() => {
@@ -265,7 +314,11 @@ export function useVisionCapture(options: UseVisionCaptureOptions): UseVisionCap
     //  combining two separate WebM files requires remuxing. The active
     //  recording starts right when detection triggers which is close enough.)
     if (preRecorderRef.current && preRecorderRef.current.state !== 'inactive') {
-      try { preRecorderRef.current.stop(); } catch { /* ignore */ }
+      try {
+        preRecorderRef.current.stop();
+      } catch {
+        /* ignore */
+      }
     }
     preRecorderRef.current = null;
 
@@ -274,7 +327,7 @@ export function useVisionCapture(options: UseVisionCaptureOptions): UseVisionCap
       videoBitsPerSecond: 2_500_000,
     });
     activeChunksRef.current = [];
-    recorder.ondataavailable = (e) => {
+    recorder.ondataavailable = e => {
       if (e.data.size > 0) {
         activeChunksRef.current.push(e.data);
       }
@@ -308,60 +361,139 @@ export function useVisionCapture(options: UseVisionCaptureOptions): UseVisionCap
       startPreRecorder();
     };
 
-    try { recorder.stop(); } catch { /* ignore */ }
+    try {
+      recorder.stop();
+    } catch {
+      /* ignore */
+    }
     setIsRecording(false);
     allDetectionsRef.current = [];
     logger('[VisionTracker] Recording stopped');
   }, [uploadClip, startPreRecorder]);
 
   // Async custom object matching (runs outside rAF to avoid blocking)
-  const matchCustomObjects = useCallback(async (
-    detections: DetectionResult[],
-    customObjs: CustomObject[],
-    video: HTMLVideoElement
-  ): Promise<DetectionResult[]> => {
-    const enhanced = [...detections];
+  const matchCustomObjects = useCallback(
+    async (
+      detections: DetectionResult[],
+      customObjs: CustomObject[],
+      video: HTMLVideoElement
+    ): Promise<DetectionResult[]> => {
+      const enhanced = [...detections];
 
-    // Relabel COCO detections that match custom objects
-    const cocoRefines = customObjs.filter(o => o.baseClass);
-    if (cocoRefines.length > 0) {
-      for (let i = 0; i < enhanced.length; i++) {
-        const det = enhanced[i];
-        const relevant = cocoRefines.filter(o => o.baseClass === det.label);
-        if (relevant.length === 0 || !det.boundingBox) continue;
+      // Relabel COCO detections that match custom objects
+      const cocoRefines = customObjs.filter(o => o.baseClass);
+      if (cocoRefines.length > 0) {
+        for (let i = 0; i < enhanced.length; i++) {
+          const det = enhanced[i];
+          const relevant = cocoRefines.filter(o => o.baseClass === det.label);
+          if (relevant.length === 0 || !det.boundingBox) continue;
+          try {
+            const crop = cropFromVideo(
+              video,
+              det.boundingBox.x,
+              det.boundingBox.y,
+              det.boundingBox.width,
+              det.boundingBox.height
+            );
+            const embedding = await embedImage(crop);
+            const match = findBestMatch(
+              embedding,
+              relevant,
+              relevant[0]?.matchThreshold ?? 0.6
+            );
+            console.log(
+              '[VisionTracker] Embed match:',
+              det.label,
+              '→',
+              match
+                ? `${match.label} (${match.similarity.toFixed(3)})`
+                : 'no match',
+              `(threshold: ${relevant[0]?.matchThreshold ?? 0.6}, examples: ${relevant[0]?.embeddings?.length})`
+            );
+            if (match) {
+              enhanced[i] = {
+                ...det,
+                label: match.label,
+                score: match.similarity,
+              };
+            }
+          } catch (err) {
+            console.error(
+              '[VisionTracker] Embedding failed for',
+              det.label,
+              err
+            );
+          }
+        }
+      }
+
+      // Scan for entirely new objects (no baseClass) using full frame
+      const newObjs = customObjs.filter(o => !o.baseClass);
+      if (newObjs.length > 0) {
         try {
-          const crop = cropFromVideo(video, det.boundingBox.x, det.boundingBox.y, det.boundingBox.width, det.boundingBox.height);
-          const embedding = await embedImage(crop);
-          const match = findBestMatch(embedding, relevant);
+          const frameCrop = cropFromVideo(
+            video,
+            0,
+            0,
+            video.videoWidth,
+            video.videoHeight
+          );
+          const frameEmb = await embedImage(frameCrop);
+          const match = findBestMatch(frameEmb, newObjs, 0.5);
           if (match) {
-            enhanced[i] = { ...det, label: match.label, score: match.similarity };
+            const alreadyPresent = enhanced.some(d => d.label === match.label);
+            if (!alreadyPresent) {
+              // Try to find which COCO detection this custom object corresponds to
+              // by embedding each detection's crop and comparing
+              let replaced = false;
+              for (let i = 0; i < enhanced.length; i++) {
+                const det = enhanced[i];
+                if (!det.boundingBox) continue;
+                try {
+                  const crop = cropFromVideo(
+                    video,
+                    det.boundingBox.x,
+                    det.boundingBox.y,
+                    det.boundingBox.width,
+                    det.boundingBox.height
+                  );
+                  const cropEmb = await embedImage(crop);
+                  const matchedObj = newObjs.find(o => o.label === match.label);
+                  if (matchedObj) {
+                    const cropMatch = findBestMatch(
+                      cropEmb,
+                      [matchedObj],
+                      0.35
+                    );
+                    if (cropMatch) {
+                      enhanced[i] = {
+                        ...det,
+                        label: match.label,
+                        score: cropMatch.similarity,
+                      };
+                      replaced = true;
+                      break;
+                    }
+                  }
+                } catch {
+                  // crop embed failed, try next
+                }
+              }
+              // If no crop matched, append as standalone detection
+              if (!replaced) {
+                enhanced.push({ label: match.label, score: match.similarity });
+              }
+            }
           }
         } catch {
-          // embedding failed, keep original label
+          // embedding failed
         }
       }
-    }
 
-    // Scan for entirely new objects (no baseClass) using full frame
-    const newObjs = customObjs.filter(o => !o.baseClass);
-    if (newObjs.length > 0) {
-      try {
-        const frameCrop = cropFromVideo(video, 0, 0, video.videoWidth, video.videoHeight);
-        const frameEmb = await embedImage(frameCrop);
-        const match = findBestMatch(frameEmb, newObjs, 0.5);
-        if (match) {
-          const alreadyPresent = enhanced.some(d => d.label === match.label);
-          if (!alreadyPresent) {
-            enhanced.push({ label: match.label, score: match.similarity });
-          }
-        }
-      } catch {
-        // embedding failed
-      }
-    }
-
-    return enhanced;
-  }, []);
+      return enhanced;
+    },
+    []
+  );
 
   // Detection loop
   useEffect(() => {
@@ -401,46 +533,82 @@ export function useVisionCapture(options: UseVisionCaptureOptions): UseVisionCap
 
         try {
           const result = detector.detectForVideo(video, timestamp);
-          const mapped: DetectionResult[] = (result.detections ?? []).map(d => ({
-            label: d.categories?.[0]?.categoryName ?? 'unknown',
-            score: d.categories?.[0]?.score ?? 0,
-            boundingBox: d.boundingBox ? {
-              x: d.boundingBox.originX,
-              y: d.boundingBox.originY,
-              width: d.boundingBox.width,
-              height: d.boundingBox.height,
-            } : undefined,
-          }));
+          const mapped: DetectionResult[] = (result.detections ?? []).map(
+            d => ({
+              label: d.categories?.[0]?.categoryName ?? 'unknown',
+              score: d.categories?.[0]?.score ?? 0,
+              boundingBox: d.boundingBox
+                ? {
+                    x: d.boundingBox.originX,
+                    y: d.boundingBox.originY,
+                    width: d.boundingBox.width,
+                    height: d.boundingBox.height,
+                  }
+                : undefined,
+            })
+          );
 
           // Filter by object types if specified
           const types = opts.objectTypes ?? [];
-          const filtered = types.length > 0
-            ? mapped.filter(d => types.includes(d.label))
-            : mapped;
+          const filtered =
+            types.length > 0
+              ? mapped.filter(d => types.includes(d.label))
+              : mapped;
 
-          // Custom object matching: run async, only set detections once resolved
+          // Apply cached custom labels to fresh COCO detections (replaces, not appends)
           const customObjs = opts.customObjects ?? [];
-          if (customObjs.length > 0 && video) {
-            if (!embeddingInFlightRef.current) {
-              embeddingInFlightRef.current = true;
-              matchCustomObjects(filtered, customObjs, video).then(enhanced => {
+          const labelMap = customLabelMapRef.current;
+          const labeled = filtered.map(d => {
+            const custom = labelMap.get(d.label);
+            return custom ? { ...d, label: custom } : d;
+          });
+
+          setDetections(labeled);
+
+          // Refresh custom label map async (doesn't block rendering)
+          if (customObjs.length > 0 && video && !embeddingInFlightRef.current) {
+            embeddingInFlightRef.current = true;
+            console.log(
+              '[VisionTracker] Running custom match, objects:',
+              customObjs.map(o => o.label),
+              'detections:',
+              filtered.map(d => d.label)
+            );
+            matchCustomObjects(filtered, customObjs, video)
+              .then(enhanced => {
+                console.log(
+                  '[VisionTracker] Match result:',
+                  enhanced.map(d => d.label),
+                  'from:',
+                  filtered.map(d => d.label)
+                );
                 embeddingInFlightRef.current = false;
-                lastEnhancedRef.current = enhanced;
-                setDetections(enhanced);
-              }).catch(() => {
+                // Update label map — only overwrite entries that the embedder had an opinion on
+                const map = customLabelMapRef.current;
+                for (let i = 0; i < filtered.length; i++) {
+                  if (!enhanced[i]) continue;
+                  if (enhanced[i].label !== filtered[i].label) {
+                    // Matched a custom object — cache the mapping
+                    map.set(filtered[i].label, enhanced[i].label);
+                  }
+                  // If it didn't match, keep any existing mapping (don't clear on one bad frame)
+                }
+                customLabelMapRef.current = map;
+                // Apply updated map to current detections immediately
+                setDetections(prev =>
+                  prev.map(d => {
+                    const custom = map.get(d.label);
+                    return custom ? { ...d, label: custom } : d;
+                  })
+                );
+              })
+              .catch(err => {
+                console.error('[VisionTracker] Custom match failed:', err);
                 embeddingInFlightRef.current = false;
-                setDetections(filtered);
               });
-            }
-            // While embedding is in flight, don't overwrite with raw COCO labels
-          } else {
-            setDetections(filtered);
           }
 
-          // Use last enhanced result for recording logic (or filtered if no custom objects)
-          const enhanced = customObjs.length > 0 && lastEnhancedRef.current.length > 0
-            ? lastEnhancedRef.current
-            : filtered;
+          const enhanced = labeled;
 
           const hasObjects = enhanced.length > 0;
 
@@ -459,7 +627,11 @@ export function useVisionCapture(options: UseVisionCaptureOptions): UseVisionCap
           const postMs = (opts.postBufferSeconds ?? 2) * 1000;
           const maxMs = (opts.maxClipSeconds ?? 30) * 1000;
 
-          if (state === 'idle' && hasObjects && now >= cooldownUntilRef.current) {
+          if (
+            state === 'idle' &&
+            hasObjects &&
+            now >= cooldownUntilRef.current
+          ) {
             // Start recording
             recordingStateRef.current = 'recording';
             allDetectionsRef.current = [...enhanced];
@@ -473,7 +645,8 @@ export function useVisionCapture(options: UseVisionCaptureOptions): UseVisionCap
             // Check stop conditions
             const elapsed = now - recordingStartRef.current;
             const timeSinceLastObject = now - lastObjectSeenRef.current;
-            const shouldStop = timeSinceLastObject >= postMs || elapsed >= maxMs;
+            const shouldStop =
+              timeSinceLastObject >= postMs || elapsed >= maxMs;
 
             if (shouldStop) {
               recordingStateRef.current = 'cooldown';
@@ -509,7 +682,15 @@ export function useVisionCapture(options: UseVisionCaptureOptions): UseVisionCap
         stopActiveRecording();
       }
     };
-  }, [enabled, stream, detectionFps, confidenceThreshold, notify, startActiveRecording, stopActiveRecording]);
+  }, [
+    enabled,
+    stream,
+    detectionFps,
+    confidenceThreshold,
+    notify,
+    startActiveRecording,
+    stopActiveRecording,
+  ]);
 
   // Reset detector when threshold changes
   useEffect(() => {

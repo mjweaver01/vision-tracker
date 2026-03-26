@@ -68,9 +68,7 @@ export function cropFromVideo(
 }
 
 /** Extract embedding from a canvas/image */
-export async function embedImage(
-  canvas: HTMLCanvasElement
-): Promise<number[]> {
+export async function embedImage(canvas: HTMLCanvasElement): Promise<number[]> {
   const embedder = await getEmbedder();
   const result = embedder.embed(canvas);
   const embedding = result.embeddings[0]?.floatEmbedding;
