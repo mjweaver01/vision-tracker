@@ -71,6 +71,7 @@ export class RemoteApiService implements ApiService {
     label: string;
     baseClass: string | null;
     embeddings: number[][];
+    previews: string[];
     matchThreshold?: number;
   }): Promise<CustomObject> {
     const res = await fetch(`${API_BASE}/custom-objects`, {
@@ -82,13 +83,13 @@ export class RemoteApiService implements ApiService {
     return res.json();
   }
 
-  async addExamples(id: string, embeddings: number[][]): Promise<CustomObject> {
+  async addExamples(id: string, embeddings: number[][], previews: string[]): Promise<CustomObject> {
     const res = await fetch(
       `${API_BASE}/custom-objects/${encodeURIComponent(id)}`,
       {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ embeddings }),
+        body: JSON.stringify({ embeddings, previews }),
       }
     );
     if (!res.ok) throw new Error('Failed to add examples');

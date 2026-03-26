@@ -23,24 +23,34 @@ export function initCustomObjects(): void {
       label TEXT NOT NULL,
       base_class TEXT,
       embeddings TEXT NOT NULL,
+      previews TEXT NOT NULL DEFAULT '[]',
       example_count INTEGER NOT NULL DEFAULT 0,
-      match_threshold REAL NOT NULL DEFAULT 0.6,
+      match_threshold REAL NOT NULL DEFAULT 0.4,
       created_at TEXT DEFAULT (datetime('now'))
     )
   `);
+
+  try {
+    database.run(
+      "ALTER TABLE custom_objects ADD COLUMN previews TEXT NOT NULL DEFAULT '[]'"
+    );
+  } catch {
+    // column already exists
+  }
 }
 
 export function getCustomObjects(): CustomObject[] {
   const database = getDb();
   const rows = database
     .query(
-      'SELECT id, label, base_class, embeddings, example_count, match_threshold, created_at FROM custom_objects ORDER BY label'
+      'SELECT id, label, base_class, embeddings, previews, example_count, match_threshold, created_at FROM custom_objects ORDER BY label'
     )
     .all() as {
     id: string;
     label: string;
     base_class: string | null;
     embeddings: string;
+    previews: string;
     example_count: number;
     match_threshold: number;
     created_at: string;
@@ -51,6 +61,7 @@ export function getCustomObjects(): CustomObject[] {
     label: r.label,
     baseClass: r.base_class,
     embeddings: JSON.parse(r.embeddings) as number[][],
+    previews: JSON.parse(r.previews ?? '[]') as string[],
     exampleCount: r.example_count,
     matchThreshold: r.match_threshold,
     createdAt: r.created_at,
@@ -61,6 +72,7 @@ export function saveCustomObject(obj: {
   label: string;
   baseClass: string | null;
   embeddings: number[][];
+  previews: string[];
   matchThreshold?: number;
 }): CustomObject {
   const database = getDb();
@@ -69,15 +81,16 @@ export function saveCustomObject(obj: {
 
   database
     .prepare(
-      'INSERT INTO custom_objects (id, label, base_class, embeddings, example_count, match_threshold, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)'
+      'INSERT INTO custom_objects (id, label, base_class, embeddings, previews, example_count, match_threshold, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)'
     )
     .run(
       id,
       obj.label,
       obj.baseClass,
       JSON.stringify(obj.embeddings),
+      JSON.stringify(obj.previews),
       obj.embeddings.length,
-      obj.matchThreshold ?? 0.6,
+      obj.matchThreshold ?? 0.4,
       now
     );
 
@@ -93,30 +106,34 @@ export function saveCustomObject(obj: {
     label: obj.label,
     baseClass: obj.baseClass,
     embeddings: obj.embeddings,
+    previews: obj.previews,
     exampleCount: obj.embeddings.length,
-    matchThreshold: obj.matchThreshold ?? 0.6,
+    matchThreshold: obj.matchThreshold ?? 0.4,
     createdAt: now,
   };
 }
 
 export function addExamplesToObject(
   id: string,
-  newEmbeddings: number[][]
+  newEmbeddings: number[][],
+  newPreviews: string[] = []
 ): CustomObject | null {
   const database = getDb();
   const row = database
-    .query('SELECT embeddings FROM custom_objects WHERE id = ?')
-    .get(id) as { embeddings: string } | null;
+    .query('SELECT embeddings, previews FROM custom_objects WHERE id = ?')
+    .get(id) as { embeddings: string; previews: string } | null;
   if (!row) return null;
 
-  const existing = JSON.parse(row.embeddings) as number[][];
-  const combined = [...existing, ...newEmbeddings];
+  const existingEmb = JSON.parse(row.embeddings) as number[][];
+  const existingPrev = JSON.parse(row.previews ?? '[]') as string[];
+  const combinedEmb = [...existingEmb, ...newEmbeddings];
+  const combinedPrev = [...existingPrev, ...newPreviews];
 
   database
     .prepare(
-      'UPDATE custom_objects SET embeddings = ?, example_count = ? WHERE id = ?'
+      'UPDATE custom_objects SET embeddings = ?, previews = ?, example_count = ? WHERE id = ?'
     )
-    .run(JSON.stringify(combined), combined.length, id);
+    .run(JSON.stringify(combinedEmb), JSON.stringify(combinedPrev), combinedEmb.length, id);
 
   const objs = getCustomObjects();
   return objs.find(o => o.id === id) ?? null;

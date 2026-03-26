@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 import type { DetectionResult } from '@shared/types';
 
 interface CameraFeedProps {
@@ -6,6 +6,7 @@ interface CameraFeedProps {
   stream: MediaStream | null;
   detections: DetectionResult[];
   isRecording?: boolean;
+  onDetectionClick?: (detection: DetectionResult) => void;
 }
 
 export function CameraFeed({
@@ -13,10 +14,13 @@ export function CameraFeed({
   stream,
   detections,
   isRecording,
+  onDetectionClick,
 }: CameraFeedProps) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);
   const rafRef = useRef<number>(0);
+  const detectionsRef = useRef(detections);
+  detectionsRef.current = detections;
 
   // Attach stream to video element
   useEffect(() => {
@@ -25,6 +29,36 @@ export function CameraFeed({
       video.srcObject = stream;
     }
   }, [stream, videoRef]);
+
+  // Handle clicks on bounding boxes
+  const handleCanvasClick = useCallback(
+    (e: React.MouseEvent<HTMLCanvasElement>) => {
+      if (!onDetectionClick) return;
+      const video = videoRef.current;
+      const canvas = canvasRef.current;
+      if (!video || !canvas || video.videoWidth === 0) return;
+
+      const rect = canvas.getBoundingClientRect();
+      const clickX = e.clientX - rect.left;
+      const clickY = e.clientY - rect.top;
+      const scaleX = canvas.width / video.videoWidth;
+      const scaleY = canvas.height / video.videoHeight;
+
+      for (const det of detectionsRef.current) {
+        if (!det.boundingBox) continue;
+        const bx = det.boundingBox.x * scaleX;
+        const by = det.boundingBox.y * scaleY;
+        const bw = det.boundingBox.width * scaleX;
+        const bh = det.boundingBox.height * scaleY;
+
+        if (clickX >= bx && clickX <= bx + bw && clickY >= by && clickY <= by + bh) {
+          onDetectionClick(det);
+          return;
+        }
+      }
+    },
+    [onDetectionClick, videoRef]
+  );
 
   // Draw bounding boxes on canvas overlay
   useEffect(() => {
@@ -40,7 +74,6 @@ export function CameraFeed({
       const ctx = c.getContext('2d');
       if (!ctx) return;
 
-      // Match canvas size to video display size
       const rect = v.getBoundingClientRect();
       if (c.width !== rect.width || c.height !== rect.height) {
         c.width = rect.width;
@@ -65,12 +98,10 @@ export function CameraFeed({
         const bw = width * scaleX;
         const bh = height * scaleY;
 
-        // Bounding box
         ctx.strokeStyle = '#ef4444';
         ctx.lineWidth = 2;
         ctx.strokeRect(bx, by, bw, bh);
 
-        // Label background
         const label = `${det.label} ${Math.round(det.score * 100)}%`;
         ctx.font = '14px system-ui, sans-serif';
         const textMetrics = ctx.measureText(label);
@@ -85,7 +116,6 @@ export function CameraFeed({
           textHeight + padding
         );
 
-        // Label text
         ctx.fillStyle = '#ffffff';
         ctx.fillText(label, bx + padding, by - padding - 2);
       }
@@ -114,7 +144,8 @@ export function CameraFeed({
       />
       <canvas
         ref={canvasRef}
-        className="pointer-events-none absolute inset-0 h-full w-full"
+        className={`absolute inset-0 h-full w-full ${onDetectionClick ? 'cursor-pointer' : 'pointer-events-none'}`}
+        onClick={onDetectionClick ? handleCanvasClick : undefined}
       />
       {isRecording && (
         <div className="absolute right-3 top-3 flex items-center gap-2 rounded-full bg-red-600/90 px-3 py-1 text-xs font-medium text-white">

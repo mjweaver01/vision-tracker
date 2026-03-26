@@ -12,6 +12,7 @@ export const customObjectsApi = {
       label: string;
       baseClass: string | null;
       embeddings: number[][];
+      previews: string[];
       matchThreshold?: number;
     };
     if (
@@ -21,7 +22,7 @@ export const customObjectsApi = {
     ) {
       return new Response('Missing label or embeddings', { status: 400 });
     }
-    const obj = saveCustomObject(body);
+    const obj = saveCustomObject({ ...body, previews: body.previews ?? [] });
     return Response.json(obj);
   },
 };
@@ -29,11 +30,11 @@ export const customObjectsApi = {
 export const customObjectIdApi = {
   POST: async (req: Request) => {
     const params = (req as Request & { params: { id: string } }).params;
-    const body = (await req.json()) as { embeddings: number[][] };
+    const body = (await req.json()) as { embeddings: number[][]; previews?: string[] };
     if (!Array.isArray(body.embeddings) || body.embeddings.length === 0) {
       return new Response('Missing embeddings', { status: 400 });
     }
-    const obj = addExamplesToObject(params.id, body.embeddings);
+    const obj = addExamplesToObject(params.id, body.embeddings, body.previews ?? []);
     if (!obj) return new Response('Not found', { status: 404 });
     return Response.json(obj);
   },

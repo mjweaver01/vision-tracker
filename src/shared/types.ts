@@ -30,6 +30,8 @@ export interface CustomObject {
   baseClass: string | null;
   /** Stored embedding vectors from training examples */
   embeddings: number[][];
+  /** JPEG data URL thumbnails of training examples */
+  previews: string[];
   /** Number of training examples captured */
   exampleCount: number;
   /** Similarity threshold for matching (0-1) */

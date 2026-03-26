@@ -14,6 +14,7 @@ export function CustomObjectsList({
   onTrain,
 }: CustomObjectsListProps) {
   const [objects, setObjects] = useState<CustomObject[]>([]);
+  const [expandedId, setExpandedId] = useState<string | null>(null);
 
   const fetch = useCallback(async () => {
     const data = await api().getCustomObjects();
@@ -41,33 +42,59 @@ export function CustomObjectsList({
         {objects.map(obj => (
           <div
             key={obj.id}
-            className="flex items-center justify-between rounded-lg border border-zinc-700 bg-zinc-800 px-3 py-2"
+            className="rounded-lg border border-zinc-700 bg-zinc-800 overflow-hidden"
           >
-            <div className="min-w-0">
-              <p className="text-sm font-medium text-zinc-100">{obj.label}</p>
-              <p className="text-xs text-zinc-500">
-                {obj.baseClass ? `Refines "${obj.baseClass}"` : 'New object'} ·{' '}
-                {obj.exampleCount} examples
-              </p>
-            </div>
-            <div className="ml-2 flex shrink-0 items-center gap-1.5">
-              {onTrain && (
-                <button
-                  type="button"
-                  onClick={() => onTrain(obj)}
-                  className="rounded-lg px-2 py-1 text-xs text-red-400 hover:bg-red-500/20"
-                >
-                  + Examples
-                </button>
-              )}
+            <div className="flex items-center justify-between px-3 py-2">
               <button
                 type="button"
-                onClick={() => handleDelete(obj.id)}
-                className="rounded-lg px-2 py-1 text-xs text-zinc-500 hover:bg-zinc-700 hover:text-red-400"
+                onClick={() => setExpandedId(expandedId === obj.id ? null : obj.id)}
+                className="min-w-0 text-left"
               >
-                Delete
+                <p className="text-sm font-medium text-zinc-100">{obj.label}</p>
+                <p className="text-xs text-zinc-500">
+                  {obj.baseClass ? `Refines "${obj.baseClass}"` : 'New object'} ·{' '}
+                  {obj.exampleCount} examples
+                </p>
               </button>
+              <div className="ml-2 flex shrink-0 items-center gap-1.5">
+                {onTrain && (
+                  <button
+                    type="button"
+                    onClick={() => onTrain(obj)}
+                    className="rounded-lg px-2 py-1 text-xs text-red-400 hover:bg-red-500/20"
+                  >
+                    + Examples
+                  </button>
+                )}
+                <button
+                  type="button"
+                  onClick={() => handleDelete(obj.id)}
+                  className="rounded-lg px-2 py-1 text-xs text-zinc-500 hover:bg-zinc-700 hover:text-red-400"
+                >
+                  Delete
+                </button>
+              </div>
             </div>
+            {expandedId === obj.id && obj.previews && obj.previews.length > 0 && (
+              <div className="border-t border-zinc-700 px-3 py-2">
+                <p className="mb-2 text-xs text-zinc-500">Training examples:</p>
+                <div className="flex flex-wrap gap-1.5">
+                  {obj.previews.map((src, i) => (
+                    <img
+                      key={i}
+                      src={src}
+                      alt={`Example ${i + 1}`}
+                      className="h-14 w-14 rounded-md object-cover border border-zinc-700"
+                    />
+                  ))}
+                </div>
+              </div>
+            )}
+            {expandedId === obj.id && (!obj.previews || obj.previews.length === 0) && (
+              <div className="border-t border-zinc-700 px-3 py-2">
+                <p className="text-xs text-zinc-500">No preview images saved for this object.</p>
+              </div>
+            )}
           </div>
         ))}
       </div>

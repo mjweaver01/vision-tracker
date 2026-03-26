@@ -108,6 +108,7 @@ export class LocalApiService implements ApiService {
     label: string;
     baseClass: string | null;
     embeddings: number[][];
+    previews: string[];
     matchThreshold?: number;
   }): Promise<CustomObject> {
     const objects = await this.getCustomObjects();
@@ -116,8 +117,9 @@ export class LocalApiService implements ApiService {
       label: obj.label,
       baseClass: obj.baseClass,
       embeddings: obj.embeddings,
+      previews: obj.previews,
       exampleCount: obj.embeddings.length,
-      matchThreshold: obj.matchThreshold ?? 0.6,
+      matchThreshold: obj.matchThreshold ?? 0.4,
       createdAt: new Date().toISOString(),
     };
     objects.push(newObj);
@@ -125,11 +127,12 @@ export class LocalApiService implements ApiService {
     return newObj;
   }
 
-  async addExamples(id: string, embeddings: number[][]): Promise<CustomObject> {
+  async addExamples(id: string, embeddings: number[][], previews: string[]): Promise<CustomObject> {
     const objects = await this.getCustomObjects();
     const obj = objects.find(o => o.id === id);
     if (!obj) throw new Error('Not found');
     obj.embeddings.push(...embeddings);
+    obj.previews.push(...previews);
     obj.exampleCount = obj.embeddings.length;
     localStorage.setItem(this.customObjectsKey, JSON.stringify(objects));
     return obj;

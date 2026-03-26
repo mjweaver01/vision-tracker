@@ -161,13 +161,14 @@ export function TrainingModal({
     setError(null);
     try {
       if (existingObject) {
-        await api().addExamples(existingObject.id, embeddings);
+        await api().addExamples(existingObject.id, embeddings, previews);
       } else {
         await api().saveCustomObject({
           label: label.trim(),
           baseClass: mode === 'coco' ? baseClass : null,
           embeddings,
-          matchThreshold: 0.6,
+          previews,
+          matchThreshold: 0.4,
         });
       }
       onObjectSaved();

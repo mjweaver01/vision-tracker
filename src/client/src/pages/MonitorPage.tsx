@@ -90,6 +90,7 @@ export function MonitorPage() {
         stream={stream}
         detections={detections}
         isRecording={isRecording}
+        onDetectionClick={handleTrainDetection}
       />
 
       {/* Detection info + training buttons */}

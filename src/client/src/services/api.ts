@@ -21,8 +21,9 @@ export interface ApiService {
     label: string;
     baseClass: string | null;
     embeddings: number[][];
+    previews: string[];
     matchThreshold?: number;
   }): Promise<CustomObject>;
-  addExamples(id: string, embeddings: number[][]): Promise<CustomObject>;
+  addExamples(id: string, embeddings: number[][], previews: string[]): Promise<CustomObject>;
   deleteCustomObject(id: string): Promise<void>;
 }
