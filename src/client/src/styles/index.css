@@ -13,6 +13,8 @@ body {
 }
 
 /* Prevent double-tap zoom on buttons */
-button, a, [role="button"] {
+button,
+a,
+[role='button'] {
   touch-action: manipulation;
 }

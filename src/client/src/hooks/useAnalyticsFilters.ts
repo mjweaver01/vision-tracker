@@ -51,9 +51,12 @@ export function useAnalyticsFilters() {
 
   const [grouping, setGrouping] = useState<TimeGrouping>(DEFAULT_GROUPING);
   const [dateRange, setDateRange] = useState<DateRange>(DEFAULT_DATE_RANGE);
-  const [classificationFilter, setClassificationFilter] = useState<string>('all');
+  const [classificationFilter, setClassificationFilter] =
+    useState<string>('all');
   const [chartView, setChartView] = useState<ChartView>(DEFAULT_CHART_VIEW);
-  const [chartType, setChartType] = useState<'bar' | 'line'>(DEFAULT_CHART_TYPE);
+  const [chartType, setChartType] = useState<'bar' | 'line'>(
+    DEFAULT_CHART_TYPE
+  );
   const [visibleClassifications, setVisibleClassifications] = useState<
     Set<string>
   >(new Set());

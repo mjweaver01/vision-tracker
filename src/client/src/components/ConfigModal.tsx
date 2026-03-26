@@ -55,7 +55,10 @@ export function ConfigModal({
         onClick={e => e.stopPropagation()}
       >
         <div className="sticky top-0 z-10 flex items-center justify-between border-b border-zinc-700/50 bg-zinc-900 px-4 py-3 sm:px-6">
-          <h2 id="config-modal-title" className="text-lg font-semibold text-zinc-100">
+          <h2
+            id="config-modal-title"
+            className="text-lg font-semibold text-zinc-100"
+          >
             Settings
           </h2>
           <button
@@ -64,13 +67,28 @@ export function ConfigModal({
             className="-m-2 rounded-full p-2 text-zinc-400 transition-colors hover:bg-zinc-800 hover:text-zinc-100 touch-manipulation"
             aria-label="Close settings"
           >
-            <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+            <svg
+              className="h-5 w-5"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              strokeWidth={2}
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M6 18L18 6M6 6l12 12"
+              />
             </svg>
           </button>
         </div>
         <div className="p-4 pb-[max(1rem,env(safe-area-inset-bottom))] sm:p-6">
-          <Configuration config={config} onSave={handleSave} devices={devices} embedded />
+          <Configuration
+            config={config}
+            onSave={handleSave}
+            devices={devices}
+            embedded
+          />
         </div>
       </div>
     </div>

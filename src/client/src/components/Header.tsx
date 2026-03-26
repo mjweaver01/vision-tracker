@@ -8,8 +8,7 @@ import { ConfigModal } from './ConfigModal';
 import { useIsMobile } from '../hooks/useIsMobile';
 
 export function Header() {
-  const { status, config, handleSaveConfig, devices } =
-    useMonitoringStatus();
+  const { status, config, handleSaveConfig, devices } = useMonitoringStatus();
   const location = useLocation();
   const isAnalyticsPage = location.pathname === '/analytics';
   const isMobile = useIsMobile();

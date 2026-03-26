@@ -5,8 +5,13 @@ let service: ApiService | null = null;
 function isNativePlatform(): boolean {
   try {
     // Capacitor injects this on native platforms
-    return (window as unknown as { Capacitor?: { isNativePlatform?: () => boolean } })
-      .Capacitor?.isNativePlatform?.() ?? false;
+    return (
+      (
+        window as unknown as {
+          Capacitor?: { isNativePlatform?: () => boolean };
+        }
+      ).Capacitor?.isNativePlatform?.() ?? false
+    );
   } catch {
     return false;
   }

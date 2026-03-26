@@ -85,12 +85,11 @@ export function ObjectTypeMultiselect({
                   setQuery('');
                 }}
                 className={`w-full px-3 py-2 text-left text-sm transition-colors hover:bg-zinc-700 ${
-                  selected.includes(o)
-                    ? 'text-red-400'
-                    : 'text-zinc-300'
+                  selected.includes(o) ? 'text-red-400' : 'text-zinc-300'
                 }`}
               >
-                {selected.includes(o) ? '✓ ' : ''}{o}
+                {selected.includes(o) ? '✓ ' : ''}
+                {o}
               </button>
             ))}
           </div>

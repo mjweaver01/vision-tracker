@@ -76,7 +76,9 @@ export function MonitoringStatusProvider({
   children: ReactNode;
 }) {
   const [status, setStatus] = useState<MonitoringStatus>(defaultStatus);
-  const [cameraEnabled, setCameraEnabledState] = useState(getStoredCameraEnabled);
+  const [cameraEnabled, setCameraEnabledState] = useState(
+    getStoredCameraEnabled
+  );
   const [config, setConfig] = useState<AppConfig>(() => ({
     ...DEFAULT_CONFIG,
   }));
@@ -88,7 +90,10 @@ export function MonitoringStatusProvider({
   }, []);
 
   useEffect(() => {
-    api().getCustomObjects().then(setCustomObjects).catch(() => {});
+    api()
+      .getCustomObjects()
+      .then(setCustomObjects)
+      .catch(() => {});
   }, [customObjectsVersion]);
 
   const setCameraEnabled = useCallback((v: boolean) => {
@@ -96,22 +101,29 @@ export function MonitoringStatusProvider({
     setStoredCameraEnabled(v);
   }, []);
 
-  const { detections, isRecording, error, stream, lastDetection, devices, videoRef } =
-    useVisionCapture({
-      confidenceThreshold: config.confidenceThreshold,
-      enabled: cameraEnabled,
-      onClipUploaded: incrementRecordingsVersion,
-      objectTypes: config.objectTypes ?? [],
-      detectionFps: config.detectionFps ?? 10,
-      captureIntervalMs: config.captureIntervalMs ?? 5000,
-      preBufferSeconds: config.preBufferSeconds ?? 2,
-      postBufferSeconds: config.postBufferSeconds ?? 2,
-      maxClipSeconds: config.maxClipSeconds ?? 30,
-      deviceId: config.deviceId || undefined,
-      notificationObjects: config.notificationObjects ?? [],
-      notificationsEnabled: config.notificationsEnabled ?? false,
-      customObjects,
-    });
+  const {
+    detections,
+    isRecording,
+    error,
+    stream,
+    lastDetection,
+    devices,
+    videoRef,
+  } = useVisionCapture({
+    confidenceThreshold: config.confidenceThreshold,
+    enabled: cameraEnabled,
+    onClipUploaded: incrementRecordingsVersion,
+    objectTypes: config.objectTypes ?? [],
+    detectionFps: config.detectionFps ?? 10,
+    captureIntervalMs: config.captureIntervalMs ?? 5000,
+    preBufferSeconds: config.preBufferSeconds ?? 2,
+    postBufferSeconds: config.postBufferSeconds ?? 2,
+    maxClipSeconds: config.maxClipSeconds ?? 30,
+    deviceId: config.deviceId || undefined,
+    notificationObjects: config.notificationObjects ?? [],
+    notificationsEnabled: config.notificationsEnabled ?? false,
+    customObjects,
+  });
 
   useEffect(() => {
     setStatus({
@@ -122,7 +134,10 @@ export function MonitoringStatusProvider({
   }, [cameraEnabled, isRecording, error, setStatus]);
 
   useEffect(() => {
-    api().getConfig().then(setConfig).catch(() => {});
+    api()
+      .getConfig()
+      .then(setConfig)
+      .catch(() => {});
   }, []);
 
   const restartMonitoring = useCallback(() => {

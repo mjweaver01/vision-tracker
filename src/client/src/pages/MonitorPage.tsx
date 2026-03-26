@@ -25,8 +25,11 @@ export function MonitorPage() {
   const isMobile = useIsMobile();
 
   const [trainingOpen, setTrainingOpen] = useState(false);
-  const [trainingDetection, setTrainingDetection] = useState<DetectionResult | null>(null);
-  const [trainingExisting, setTrainingExisting] = useState<CustomObject | null>(null);
+  const [trainingDetection, setTrainingDetection] =
+    useState<DetectionResult | null>(null);
+  const [trainingExisting, setTrainingExisting] = useState<CustomObject | null>(
+    null
+  );
   const [customObjectsVersion, setCustomObjectsVersion] = useState(0);
 
   const handleTrainDetection = (det: DetectionResult) => {

@@ -26,10 +26,7 @@ import { api } from '../services';
 import { useRecordingsVersion } from '../lib/recordingsVersion';
 import { ClipsList } from '../components/SnapshotsList';
 import { useAnalyticsFilters } from '../hooks/useAnalyticsFilters';
-import type {
-  ChartView,
-  TimeGrouping,
-} from '../hooks/useAnalyticsFilters';
+import type { ChartView, TimeGrouping } from '../hooks/useAnalyticsFilters';
 
 const MAX_CHART_POINTS = 300;
 
@@ -161,10 +158,7 @@ export function AnalyticsPage() {
   }, [deferredClips, dateRange, classificationFilter]);
 
   const listClips = useMemo(() => {
-    if (
-      visibleClassifications.size > 0 &&
-      classificationFilter === 'all'
-    ) {
+    if (visibleClassifications.size > 0 && classificationFilter === 'all') {
       return filteredClips.filter(r =>
         r.detections.some(c => visibleClassifications.has(c.label))
       );
@@ -471,9 +465,7 @@ export function AnalyticsPage() {
       <div className="mb-6 grid grid-cols-2 gap-4 sm:grid-cols-4">
         <div className="rounded-md border border-zinc-700 bg-zinc-800/50 px-4 py-3">
           <p className="text-xs text-zinc-500">Total clips</p>
-          <p className="text-xl font-semibold text-red-400">
-            {summary.total}
-          </p>
+          <p className="text-xl font-semibold text-red-400">{summary.total}</p>
         </div>
         <div className="rounded-md border border-zinc-700 bg-zinc-800/50 px-4 py-3">
           <p className="text-xs text-zinc-500">Avg per day</p>

@@ -11,17 +11,36 @@ interface ConfigurationProps {
   embedded?: boolean;
 }
 
-export function Configuration({ config, onSave, devices, embedded }: ConfigurationProps) {
-  const [confidenceThreshold, setConfidenceThreshold] = useState(config.confidenceThreshold);
+export function Configuration({
+  config,
+  onSave,
+  devices,
+  embedded,
+}: ConfigurationProps) {
+  const [confidenceThreshold, setConfidenceThreshold] = useState(
+    config.confidenceThreshold
+  );
   const [objectTypes, setObjectTypes] = useState<string[]>(config.objectTypes);
   const [detectionFps, setDetectionFps] = useState(config.detectionFps);
-  const [preBufferSeconds, setPreBufferSeconds] = useState(config.preBufferSeconds);
-  const [postBufferSeconds, setPostBufferSeconds] = useState(config.postBufferSeconds);
+  const [preBufferSeconds, setPreBufferSeconds] = useState(
+    config.preBufferSeconds
+  );
+  const [postBufferSeconds, setPostBufferSeconds] = useState(
+    config.postBufferSeconds
+  );
   const [maxClipSeconds, setMaxClipSeconds] = useState(config.maxClipSeconds);
-  const [captureIntervalMs, setCaptureIntervalMs] = useState(config.captureIntervalMs);
-  const [notificationsEnabled, setNotificationsEnabled] = useState(config.notificationsEnabled);
-  const [notificationObjects, setNotificationObjects] = useState<string[]>(config.notificationObjects);
-  const [notificationError, setNotificationError] = useState<string | null>(null);
+  const [captureIntervalMs, setCaptureIntervalMs] = useState(
+    config.captureIntervalMs
+  );
+  const [notificationsEnabled, setNotificationsEnabled] = useState(
+    config.notificationsEnabled
+  );
+  const [notificationObjects, setNotificationObjects] = useState<string[]>(
+    config.notificationObjects
+  );
+  const [notificationError, setNotificationError] = useState<string | null>(
+    null
+  );
   const [deviceId, setDeviceId] = useState(config.deviceId ?? '');
   const [saving, setSaving] = useState(false);
 
@@ -113,12 +132,15 @@ export function Configuration({ config, onSave, devices, embedded }: Configurati
     setNotificationsEnabled(enabled);
   };
 
-  const selectClass = "w-full rounded-md border border-zinc-700 bg-zinc-800 px-3 py-2 text-zinc-100 focus:border-red-500 focus:outline-none focus:ring-1 focus:ring-red-500";
+  const selectClass =
+    'w-full rounded-md border border-zinc-700 bg-zinc-800 px-3 py-2 text-zinc-100 focus:border-red-500 focus:outline-none focus:ring-1 focus:ring-red-500';
 
   return (
     <form
       onSubmit={handleSubmit}
-      className={embedded ? '' : 'rounded-lg bg-zinc-900 p-6 ring-1 ring-zinc-700/50'}
+      className={
+        embedded ? '' : 'rounded-lg bg-zinc-900 p-6 ring-1 ring-zinc-700/50'
+      }
     >
       {!embedded && (
         <h2 className="mb-4 text-lg font-semibold text-zinc-100">
@@ -128,7 +150,10 @@ export function Configuration({ config, onSave, devices, embedded }: Configurati
       <div className="space-y-4">
         {devices.length > 0 && (
           <div>
-            <label htmlFor="camera" className="mb-1 block text-sm text-zinc-400">
+            <label
+              htmlFor="camera"
+              className="mb-1 block text-sm text-zinc-400"
+            >
               Camera
             </label>
             <select
@@ -150,7 +175,10 @@ export function Configuration({ config, onSave, devices, embedded }: Configurati
           </div>
         )}
         <div>
-          <label htmlFor="confidence" className="mb-1 block text-sm text-zinc-400">
+          <label
+            htmlFor="confidence"
+            className="mb-1 block text-sm text-zinc-400"
+          >
             Confidence threshold ({Math.round(confidenceThreshold * 100)}%)
           </label>
           <input
@@ -195,7 +223,10 @@ export function Configuration({ config, onSave, devices, embedded }: Configurati
           </p>
         </div>
         <div>
-          <label htmlFor="preBuffer" className="mb-1 block text-sm text-zinc-400">
+          <label
+            htmlFor="preBuffer"
+            className="mb-1 block text-sm text-zinc-400"
+          >
             Pre-buffer (seconds)
           </label>
           <select
@@ -211,11 +242,15 @@ export function Configuration({ config, onSave, devices, embedded }: Configurati
             <option value={5}>5 seconds</option>
           </select>
           <p className="mt-1 text-xs text-zinc-500">
-            Video captured before the detection trigger so you see what led up to the event
+            Video captured before the detection trigger so you see what led up
+            to the event
           </p>
         </div>
         <div>
-          <label htmlFor="postBuffer" className="mb-1 block text-sm text-zinc-400">
+          <label
+            htmlFor="postBuffer"
+            className="mb-1 block text-sm text-zinc-400"
+          >
             Post-buffer (seconds)
           </label>
           <select
@@ -254,7 +289,10 @@ export function Configuration({ config, onSave, devices, embedded }: Configurati
           </p>
         </div>
         <div>
-          <label htmlFor="cooldown" className="mb-1 block text-sm text-zinc-400">
+          <label
+            htmlFor="cooldown"
+            className="mb-1 block text-sm text-zinc-400"
+          >
             Cooldown between clips
           </label>
           <select

@@ -8,7 +8,11 @@ interface CustomObjectsListProps {
   onTrain?: (obj: CustomObject) => void;
 }
 
-export function CustomObjectsList({ refreshTrigger, onObjectsChange, onTrain }: CustomObjectsListProps) {
+export function CustomObjectsList({
+  refreshTrigger,
+  onObjectsChange,
+  onTrain,
+}: CustomObjectsListProps) {
   const [objects, setObjects] = useState<CustomObject[]>([]);
 
   const fetch = useCallback(async () => {
@@ -30,7 +34,9 @@ export function CustomObjectsList({ refreshTrigger, onObjectsChange, onTrain }: 
 
   return (
     <div className="rounded-lg bg-zinc-900 p-4 ring-1 ring-zinc-700/50">
-      <h3 className="mb-3 text-sm font-semibold text-zinc-100">Custom Objects</h3>
+      <h3 className="mb-3 text-sm font-semibold text-zinc-100">
+        Custom Objects
+      </h3>
       <div className="space-y-2">
         {objects.map(obj => (
           <div
@@ -40,7 +46,8 @@ export function CustomObjectsList({ refreshTrigger, onObjectsChange, onTrain }: 
             <div className="min-w-0">
               <p className="text-sm font-medium text-zinc-100">{obj.label}</p>
               <p className="text-xs text-zinc-500">
-                {obj.baseClass ? `Refines "${obj.baseClass}"` : 'New object'} · {obj.exampleCount} examples
+                {obj.baseClass ? `Refines "${obj.baseClass}"` : 'New object'} ·{' '}
+                {obj.exampleCount} examples
               </p>
             </div>
             <div className="ml-2 flex shrink-0 items-center gap-1.5">

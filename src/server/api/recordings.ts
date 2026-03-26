@@ -12,7 +12,9 @@ export const recordingsApi = {
       return new Response('Missing video file', { status: 400 });
     }
 
-    const durationSeconds = parseFloat(String(formData.get('durationSeconds') || '0'));
+    const durationSeconds = parseFloat(
+      String(formData.get('durationSeconds') || '0')
+    );
 
     let detections: DetectionResult[] = [];
     const detectionsStr = formData.get('detections');
@@ -24,7 +26,13 @@ export const recordingsApi = {
       }
     }
     const meta = await saveClip(video, durationSeconds, detections);
-    logger('[VisionTracker] Saved:', meta.filename, meta.durationSeconds.toFixed(1) + 's,', meta.objectCount, 'objects');
+    logger(
+      '[VisionTracker] Saved:',
+      meta.filename,
+      meta.durationSeconds.toFixed(1) + 's,',
+      meta.objectCount,
+      'objects'
+    );
     return Response.json(meta);
   },
 };

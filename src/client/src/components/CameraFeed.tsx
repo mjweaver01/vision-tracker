@@ -8,7 +8,12 @@ interface CameraFeedProps {
   isRecording?: boolean;
 }
 
-export function CameraFeed({ videoRef, stream, detections, isRecording }: CameraFeedProps) {
+export function CameraFeed({
+  videoRef,
+  stream,
+  detections,
+  isRecording,
+}: CameraFeedProps) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);
   const rafRef = useRef<number>(0);

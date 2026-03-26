@@ -19,7 +19,9 @@ export function useInfiniteScroll({
   const sentinelRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
-    setVisibleCount(prev => (prev === 0 ? pageSize : Math.min(prev, totalCount)));
+    setVisibleCount(prev =>
+      prev === 0 ? pageSize : Math.min(prev, totalCount)
+    );
   }, [totalCount, pageSize]);
 
   useEffect(() => {

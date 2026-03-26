@@ -37,8 +37,18 @@ export function MobileSlideOut({ isOpen, onClose }: MobileSlideOutProps) {
             className="-m-2 rounded-full p-2 text-zinc-400 transition-colors hover:bg-zinc-800 hover:text-zinc-100 active:bg-zinc-700 touch-manipulation"
             aria-label="Close menu"
           >
-            <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+            <svg
+              className="h-6 w-6"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              strokeWidth={2}
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M6 18L18 6M6 6l12 12"
+              />
             </svg>
           </button>
         </div>
@@ -57,8 +67,18 @@ export function MobileSlideOut({ isOpen, onClose }: MobileSlideOutProps) {
                 }`
               }
             >
-              <svg className="h-5 w-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+              <svg
+                className="h-5 w-5 shrink-0"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                strokeWidth={2}
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"
+                />
               </svg>
               Monitor
             </NavLink>
@@ -68,7 +88,9 @@ export function MobileSlideOut({ isOpen, onClose }: MobileSlideOutProps) {
                   ? `/analytics${location.search}`
                   : `/analytics${(() => {
                       try {
-                        const s = sessionStorage.getItem(ANALYTICS_FILTERS_SESSION_KEY);
+                        const s = sessionStorage.getItem(
+                          ANALYTICS_FILTERS_SESSION_KEY
+                        );
                         return s ? `?${s}` : '';
                       } catch {
                         return '';
@@ -84,8 +106,18 @@ export function MobileSlideOut({ isOpen, onClose }: MobileSlideOutProps) {
                 }`
               }
             >
-              <svg className="h-5 w-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+              <svg
+                className="h-5 w-5 shrink-0"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                strokeWidth={2}
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
+                />
               </svg>
               Analytics
             </NavLink>
@@ -94,10 +126,7 @@ export function MobileSlideOut({ isOpen, onClose }: MobileSlideOutProps) {
 
         <div className="min-h-0 flex-1 overflow-hidden">
           <div className="h-full overflow-y-auto overscroll-contain px-2 py-4 pb-[env(safe-area-inset-bottom)]">
-            <ClipsList
-              refreshTrigger={recordingsVersion}
-              compact
-            />
+            <ClipsList refreshTrigger={recordingsVersion} compact />
           </div>
         </div>
       </aside>

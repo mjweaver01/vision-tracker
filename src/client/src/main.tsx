@@ -8,8 +8,13 @@ import './styles/index.css';
 
 function isNativePlatform(): boolean {
   try {
-    return (window as unknown as { Capacitor?: { isNativePlatform?: () => boolean } })
-      .Capacitor?.isNativePlatform?.() ?? false;
+    return (
+      (
+        window as unknown as {
+          Capacitor?: { isNativePlatform?: () => boolean };
+        }
+      ).Capacitor?.isNativePlatform?.() ?? false
+    );
   } catch {
     return false;
   }

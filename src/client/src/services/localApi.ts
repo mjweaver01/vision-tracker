@@ -1,4 +1,9 @@
-import type { AppConfig, ClipMetadata, CustomObject, DetectionResult } from '@shared/types';
+import type {
+  AppConfig,
+  ClipMetadata,
+  CustomObject,
+  DetectionResult,
+} from '@shared/types';
 import { DEFAULT_CONFIG } from '@shared/constants';
 import type { ApiService } from './api';
 import { putClip, getClip, getAllClips } from './db';
@@ -27,14 +32,23 @@ export class LocalApiService implements ApiService {
 
   async getClips(): Promise<ClipMetadata[]> {
     const records = await getAllClips();
-    return records.map(({ id, filename, timestamp, durationSeconds, detections, objectCount }) => ({
-      id,
-      filename,
-      timestamp,
-      durationSeconds,
-      detections,
-      objectCount,
-    }));
+    return records.map(
+      ({
+        id,
+        filename,
+        timestamp,
+        durationSeconds,
+        detections,
+        objectCount,
+      }) => ({
+        id,
+        filename,
+        timestamp,
+        durationSeconds,
+        detections,
+        objectCount,
+      })
+    );
   }
 
   async saveClip(
@@ -57,7 +71,14 @@ export class LocalApiService implements ApiService {
       videoBlob,
     });
 
-    return { id, filename, timestamp, durationSeconds, detections, objectCount: detections.length };
+    return {
+      id,
+      filename,
+      timestamp,
+      durationSeconds,
+      detections,
+      objectCount: detections.length,
+    };
   }
 
   async getClipUrl(id: string): Promise<string> {
@@ -78,10 +99,17 @@ export class LocalApiService implements ApiService {
     try {
       const stored = localStorage.getItem(this.customObjectsKey);
       return stored ? JSON.parse(stored) : [];
-    } catch { return []; }
+    } catch {
+      return [];
+    }
   }
 
-  async saveCustomObject(obj: { label: string; baseClass: string | null; embeddings: number[][]; matchThreshold?: number }): Promise<CustomObject> {
+  async saveCustomObject(obj: {
+    label: string;
+    baseClass: string | null;
+    embeddings: number[][];
+    matchThreshold?: number;
+  }): Promise<CustomObject> {
     const objects = await this.getCustomObjects();
     const newObj: CustomObject = {
       id: crypto.randomUUID(),

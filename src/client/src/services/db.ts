@@ -62,7 +62,10 @@ export async function getAllClips(): Promise<ClipRecord[]> {
   const db = await openDb();
   return new Promise((resolve, reject) => {
     const tx = db.transaction(STORE_NAME, 'readonly');
-    const request = tx.objectStore(STORE_NAME).index('timestamp').openCursor(null, 'prev');
+    const request = tx
+      .objectStore(STORE_NAME)
+      .index('timestamp')
+      .openCursor(null, 'prev');
     const results: ClipRecord[] = [];
     request.onsuccess = () => {
       const cursor = request.result;

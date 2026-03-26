@@ -2,7 +2,10 @@ import type { AppConfig } from '@shared/types';
 import { getConfig, saveConfig } from '../config';
 
 function getBrowserId(req: Request): string | null {
-  return req.headers.get('X-Browser-Id') ?? new URL(req.url).searchParams.get('browserId');
+  return (
+    req.headers.get('X-Browser-Id') ??
+    new URL(req.url).searchParams.get('browserId')
+  );
 }
 
 export const configApi = {
@@ -24,7 +27,8 @@ export const configApi = {
       if (typeof val === 'number') updates[key] = val;
     }
     if (Array.isArray(body.objectTypes)) updates.objectTypes = body.objectTypes;
-    if (body.deviceId !== undefined) updates.deviceId = body.deviceId || undefined;
+    if (body.deviceId !== undefined)
+      updates.deviceId = body.deviceId || undefined;
     if (Array.isArray(body.notificationObjects))
       updates.notificationObjects = body.notificationObjects;
     if (typeof body.notificationsEnabled === 'boolean')

@@ -1,4 +1,9 @@
-import type { AppConfig, ClipMetadata, CustomObject, DetectionResult } from '@shared/types';
+import type {
+  AppConfig,
+  ClipMetadata,
+  CustomObject,
+  DetectionResult,
+} from '@shared/types';
 import { API_BASE } from '@shared/constants';
 import type { ApiService } from './api';
 import { getBrowserId } from '../lib/browserId';
@@ -62,7 +67,12 @@ export class RemoteApiService implements ApiService {
     return res.json();
   }
 
-  async saveCustomObject(obj: { label: string; baseClass: string | null; embeddings: number[][]; matchThreshold?: number }): Promise<CustomObject> {
+  async saveCustomObject(obj: {
+    label: string;
+    baseClass: string | null;
+    embeddings: number[][];
+    matchThreshold?: number;
+  }): Promise<CustomObject> {
     const res = await fetch(`${API_BASE}/custom-objects`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -73,19 +83,25 @@ export class RemoteApiService implements ApiService {
   }
 
   async addExamples(id: string, embeddings: number[][]): Promise<CustomObject> {
-    const res = await fetch(`${API_BASE}/custom-objects/${encodeURIComponent(id)}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ embeddings }),
-    });
+    const res = await fetch(
+      `${API_BASE}/custom-objects/${encodeURIComponent(id)}`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ embeddings }),
+      }
+    );
     if (!res.ok) throw new Error('Failed to add examples');
     return res.json();
   }
 
   async deleteCustomObject(id: string): Promise<void> {
-    const res = await fetch(`${API_BASE}/custom-objects/${encodeURIComponent(id)}`, {
-      method: 'DELETE',
-    });
+    const res = await fetch(
+      `${API_BASE}/custom-objects/${encodeURIComponent(id)}`,
+      {
+        method: 'DELETE',
+      }
+    );
     if (!res.ok) throw new Error('Failed to delete');
   }
 }

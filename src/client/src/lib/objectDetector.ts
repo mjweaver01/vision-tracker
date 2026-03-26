@@ -4,7 +4,9 @@ import { logger } from '@shared/logger';
 
 let detectorPromise: Promise<ObjectDetector> | null = null;
 
-export async function getDetector(scoreThreshold = 0.5): Promise<ObjectDetector> {
+export async function getDetector(
+  scoreThreshold = 0.5
+): Promise<ObjectDetector> {
   if (!detectorPromise) {
     detectorPromise = (async () => {
       logger('[VisionTracker] Loading object detection model...');

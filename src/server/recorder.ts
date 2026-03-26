@@ -56,8 +56,21 @@ export async function saveClip(
   const insert = database.prepare(
     'INSERT INTO clips (id, filename, timestamp, duration_seconds, detections, object_count) VALUES (?, ?, ?, ?, ?, ?)'
   );
-  insert.run(id, filename, new Date().toISOString(), durationSeconds, detectionsJson, detections.length);
-  logger('[VisionTracker] Clip saved:', id, durationSeconds.toFixed(1) + 's,', detections.length, 'objects');
+  insert.run(
+    id,
+    filename,
+    new Date().toISOString(),
+    durationSeconds,
+    detectionsJson,
+    detections.length
+  );
+  logger(
+    '[VisionTracker] Clip saved:',
+    id,
+    durationSeconds.toFixed(1) + 's,',
+    detections.length,
+    'objects'
+  );
 
   return {
     id,

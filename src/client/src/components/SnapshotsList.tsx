@@ -29,7 +29,8 @@ export function ClipsList({
   });
 
   const fetchClips = useCallback(async () => {
-    api().getClips()
+    api()
+      .getClips()
       .then((data: ClipMetadata[]) => {
         setLocalClips(data);
       })
@@ -82,13 +83,16 @@ export function ClipsList({
     a.click();
   };
 
-  const title =
-    showCount && !loading ? `Clips (${clips.length})` : 'Clips';
+  const title = showCount && !loading ? `Clips (${clips.length})` : 'Clips';
 
   if (loading) {
     return (
       <div className={compact ? 'px-2' : 'rounded-lg bg-zinc-900 p-6'}>
-        <h2 className={`font-semibold text-zinc-100 ${compact ? 'mb-3 text-sm' : 'mb-4 text-lg'}`}>{title}</h2>
+        <h2
+          className={`font-semibold text-zinc-100 ${compact ? 'mb-3 text-sm' : 'mb-4 text-lg'}`}
+        >
+          {title}
+        </h2>
         <p className="text-zinc-500 text-sm">Loading...</p>
       </div>
     );
@@ -97,16 +101,29 @@ export function ClipsList({
   const visibleClips = clips.slice(0, visibleCount);
 
   return (
-    <div className={compact ? 'px-2' : 'rounded-lg bg-zinc-900 p-6 ring-1 ring-zinc-700/50'}>
-      <h2 className={`font-semibold text-zinc-100 ${compact ? 'mb-3 text-sm' : 'mb-4 text-lg'}`}>{title}</h2>
+    <div
+      className={
+        compact ? 'px-2' : 'rounded-lg bg-zinc-900 p-6 ring-1 ring-zinc-700/50'
+      }
+    >
+      <h2
+        className={`font-semibold text-zinc-100 ${compact ? 'mb-3 text-sm' : 'mb-4 text-lg'}`}
+      >
+        {title}
+      </h2>
       {clips.length === 0 ? (
         <p className="text-zinc-500 text-sm">
           No clips yet. When objects are detected, video clips will appear here.
         </p>
       ) : (
-        <div className={`space-y-2 overflow-y-auto ${compact ? 'max-h-none' : 'max-h-[400px]'}`}>
+        <div
+          className={`space-y-2 overflow-y-auto ${compact ? 'max-h-none' : 'max-h-[400px]'}`}
+        >
           {visibleClips.map(c => (
-            <div key={c.id} className="rounded-lg border border-zinc-700 bg-zinc-800 overflow-hidden">
+            <div
+              key={c.id}
+              className="rounded-lg border border-zinc-700 bg-zinc-800 overflow-hidden"
+            >
               <div
                 className={`flex items-center justify-between px-3 ${compact ? 'py-2.5' : 'py-2'}`}
               >
@@ -115,7 +132,8 @@ export function ClipsList({
                     {formatDate(c.timestamp)}
                   </p>
                   <p className="text-xs text-zinc-500">
-                    {c.durationSeconds.toFixed(1)}s · {c.objectCount} object{c.objectCount !== 1 ? 's' : ''}
+                    {c.durationSeconds.toFixed(1)}s · {c.objectCount} object
+                    {c.objectCount !== 1 ? 's' : ''}
                     {c.detections.length > 0 && (
                       <>
                         {' · '}
@@ -128,12 +146,16 @@ export function ClipsList({
                     )}
                   </p>
                 </div>
-                <div className={`ml-2 flex shrink-0 items-center gap-1.5 ${compact ? 'gap-2' : 'sm:gap-2'}`}>
+                <div
+                  className={`ml-2 flex shrink-0 items-center gap-1.5 ${compact ? 'gap-2' : 'sm:gap-2'}`}
+                >
                   <button
                     type="button"
                     onClick={() => handlePlay(c.id)}
                     className={`rounded-lg px-3 py-2 text-sm font-medium touch-manipulation flex items-center justify-center ${
-                      compact ? 'min-h-[44px] min-w-[44px]' : 'sm:min-h-0 sm:min-w-0 sm:px-2 sm:py-1'
+                      compact
+                        ? 'min-h-[44px] min-w-[44px]'
+                        : 'sm:min-h-0 sm:min-w-0 sm:px-2 sm:py-1'
                     } ${
                       playingId === c.id
                         ? 'bg-red-600 text-white'

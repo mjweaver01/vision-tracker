@@ -4,10 +4,7 @@ import { getClipsDir } from '../recorder';
 export const recordingsIdApi = {
   GET: async (req: Request) => {
     const params = (req as Request & { params: { id: string } }).params;
-    const id = decodeURIComponent(params.id).replace(
-      /\.(webm|mp4)$/,
-      ''
-    );
+    const id = decodeURIComponent(params.id).replace(/\.(webm|mp4)$/, '');
     const dir = getClipsDir();
     for (const ext of ['webm', 'mp4']) {
       const filepath = join(dir, `${id}.${ext}`);

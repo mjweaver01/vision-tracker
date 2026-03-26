@@ -24,7 +24,13 @@ export function StatusIndicator({
         title={connected ? 'Live' : 'Off'}
       />
       <span className="text-sm text-zinc-400">
-        {error ? 'Error' : isRecording ? 'Recording' : connected ? 'Live' : 'Off'}
+        {error
+          ? 'Error'
+          : isRecording
+            ? 'Recording'
+            : connected
+              ? 'Live'
+              : 'Off'}
       </span>
     </div>
   );
