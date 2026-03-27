@@ -9,16 +9,22 @@ export const API_BASE = '/api';
 // Detection thresholds
 export const DEFAULT_CUSTOM_MATCH_THRESHOLD = 0.3;
 export const DEFAULT_MATCH_THRESHOLD = 0.6;
+export const DEFAULT_CONFIDENCE_THRESHOLD = 0.5;
+export const DEFAULT_CAPTURE_INTERVAL_MS = 5000;
+export const DEFAULT_PRE_BUFFER_SECONDS = 2;
+export const DEFAULT_POST_BUFFER_SECONDS = 2;
+export const DEFAULT_MAX_CLIP_SECONDS = 30;
+export const DEFAULT_DETECTION_FPS = 30;
 
 // Default config
 export const DEFAULT_CONFIG: AppConfig = {
-  confidenceThreshold: 0.5,
+  confidenceThreshold: DEFAULT_CONFIDENCE_THRESHOLD,
   objectTypes: [],
-  captureIntervalMs: 5000,
-  detectionFps: 10,
-  preBufferSeconds: 2,
-  postBufferSeconds: 2,
-  maxClipSeconds: 30,
+  captureIntervalMs: DEFAULT_CAPTURE_INTERVAL_MS,
+  detectionFps: DEFAULT_DETECTION_FPS,
+  preBufferSeconds: DEFAULT_PRE_BUFFER_SECONDS,
+  postBufferSeconds: DEFAULT_POST_BUFFER_SECONDS,
+  maxClipSeconds: DEFAULT_MAX_CLIP_SECONDS,
   customMatchThreshold: DEFAULT_CUSTOM_MATCH_THRESHOLD,
   notificationObjects: [],
   notificationsEnabled: false,

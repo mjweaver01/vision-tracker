@@ -1,7 +1,14 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { CustomObject, DetectionResult } from '@shared/types';
 import { logger } from '@shared/logger';
-import { DEFAULT_CUSTOM_MATCH_THRESHOLD } from '@shared/constants';
+import {
+  DEFAULT_CAPTURE_INTERVAL_MS,
+  DEFAULT_MAX_CLIP_SECONDS,
+  DEFAULT_CUSTOM_MATCH_THRESHOLD,
+  DEFAULT_DETECTION_FPS,
+  DEFAULT_POST_BUFFER_SECONDS,
+  DEFAULT_PRE_BUFFER_SECONDS,
+} from '@shared/constants';
 import { getDetector, resetDetector } from '../lib/objectDetector';
 import { cropFromVideo, embedImage, findBestMatch } from '../lib/imageEmbedder';
 import { api } from '../services';
@@ -47,11 +54,11 @@ export function useVisionCapture(
     enabled,
     onClipUploaded,
     objectTypes = [],
-    detectionFps = 10,
-    captureIntervalMs = 5000,
-    preBufferSeconds = 2,
-    postBufferSeconds = 2,
-    maxClipSeconds = 30,
+    detectionFps = DEFAULT_DETECTION_FPS,
+    captureIntervalMs = DEFAULT_CAPTURE_INTERVAL_MS,
+    preBufferSeconds = DEFAULT_PRE_BUFFER_SECONDS,
+    postBufferSeconds = DEFAULT_POST_BUFFER_SECONDS,
+    maxClipSeconds = DEFAULT_MAX_CLIP_SECONDS,
     deviceId,
     notificationObjects = [],
     notificationsEnabled = false,
@@ -400,11 +407,7 @@ export function useVisionCapture(
               det.boundingBox.height
             );
             const embedding = await embedImage(crop);
-            const match = findBestMatch(
-              embedding,
-              relevant,
-              threshold
-            );
+            const match = findBestMatch(embedding, relevant, threshold);
             if (match) {
               enhanced[i] = {
                 ...det,
@@ -450,9 +453,16 @@ export function useVisionCapture(
                 const cropEmb = await embedImage(crop);
                 const matchedObj = newObjs.find(o => o.label === match.label);
                 if (matchedObj) {
-                  const cropMatch = findBestMatch(cropEmb, [matchedObj], threshold * 0.8);
+                  const cropMatch = findBestMatch(
+                    cropEmb,
+                    [matchedObj],
+                    threshold * 0.8
+                  );
                   if (cropMatch) {
-                    enhanced[i] = { ...det, label: `${det.label} (${match.label})` };
+                    enhanced[i] = {
+                      ...det,
+                      label: `${det.label} (${match.label})`,
+                    };
                     break;
                   }
                 }
@@ -534,39 +544,47 @@ export function useVisionCapture(
           // Apply cached per-detection custom labels using bounding box proximity
           const customObjs = opts.customObjects ?? [];
           const cached = cachedEnhancedRef.current;
-          const labeled = cached.length > 0
-            ? filtered.map(d => {
-                if (!d.boundingBox) return d;
-                // Find the closest cached detection that has a parenthetical custom label
-                let bestDist = Infinity;
-                let bestMatch: DetectionResult | null = null;
-                const cx = d.boundingBox.x + d.boundingBox.width / 2;
-                const cy = d.boundingBox.y + d.boundingBox.height / 2;
-                for (const c of cached) {
-                  if (!c.boundingBox || !c.label.includes('(')) continue;
-                  const ccx = c.boundingBox.x + c.boundingBox.width / 2;
-                  const ccy = c.boundingBox.y + c.boundingBox.height / 2;
-                  const dist = Math.hypot(cx - ccx, cy - ccy);
-                  if (dist < bestDist && dist < 150) {
-                    bestDist = dist;
-                    bestMatch = c;
+          const labeled =
+            cached.length > 0
+              ? filtered.map(d => {
+                  if (!d.boundingBox) return d;
+                  // Find the closest cached detection that has a parenthetical custom label
+                  let bestDist = Infinity;
+                  let bestMatch: DetectionResult | null = null;
+                  const cx = d.boundingBox.x + d.boundingBox.width / 2;
+                  const cy = d.boundingBox.y + d.boundingBox.height / 2;
+                  for (const c of cached) {
+                    if (!c.boundingBox || !c.label.includes('(')) continue;
+                    const ccx = c.boundingBox.x + c.boundingBox.width / 2;
+                    const ccy = c.boundingBox.y + c.boundingBox.height / 2;
+                    const dist = Math.hypot(cx - ccx, cy - ccy);
+                    if (dist < bestDist && dist < 150) {
+                      bestDist = dist;
+                      bestMatch = c;
+                    }
                   }
-                }
-                if (bestMatch) {
-                  // Extract the parenthetical and apply to current COCO label
-                  const paren = bestMatch.label.match(/\(([^)]+)\)/);
-                  return paren ? { ...d, label: `${d.label} (${paren[1]})` } : d;
-                }
-                return d;
-              })
-            : filtered;
+                  if (bestMatch) {
+                    // Extract the parenthetical and apply to current COCO label
+                    const paren = bestMatch.label.match(/\(([^)]+)\)/);
+                    return paren
+                      ? { ...d, label: `${d.label} (${paren[1]})` }
+                      : d;
+                  }
+                  return d;
+                })
+              : filtered;
 
           setDetections(labeled);
 
           // Refresh cached enhanced detections async (per-detection embedding)
           if (customObjs.length > 0 && video && !embeddingInFlightRef.current) {
             embeddingInFlightRef.current = true;
-            matchCustomObjects(filtered, customObjs, video, opts.customMatchThreshold ?? DEFAULT_CUSTOM_MATCH_THRESHOLD)
+            matchCustomObjects(
+              filtered,
+              customObjs,
+              video,
+              opts.customMatchThreshold ?? DEFAULT_CUSTOM_MATCH_THRESHOLD
+            )
               .then(enhanced => {
                 embeddingInFlightRef.current = false;
                 cachedEnhancedRef.current = enhanced;
