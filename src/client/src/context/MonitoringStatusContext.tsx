@@ -7,7 +7,7 @@ import {
   type ReactNode,
 } from 'react';
 import type { AppConfig, CustomObject, DetectionResult } from '@shared/types';
-import { DEFAULT_CONFIG } from '@shared/constants';
+import { DEFAULT_CONFIG, DEFAULT_CUSTOM_MATCH_THRESHOLD } from '@shared/constants';
 import { api } from '../services';
 import {
   useVisionCapture,
@@ -122,7 +122,7 @@ export function MonitoringStatusProvider({
     deviceId: config.deviceId || undefined,
     notificationObjects: config.notificationObjects ?? [],
     notificationsEnabled: config.notificationsEnabled ?? false,
-    customMatchThreshold: config.customMatchThreshold ?? 0.4,
+    customMatchThreshold: config.customMatchThreshold ?? DEFAULT_CUSTOM_MATCH_THRESHOLD,
     customObjects,
   });
 

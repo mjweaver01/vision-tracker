@@ -1,5 +1,5 @@
 import { ImageEmbedder, FilesetResolver } from '@mediapipe/tasks-vision';
-import { VISION_WASM_PATH } from '@shared/constants';
+import { VISION_WASM_PATH, DEFAULT_MATCH_THRESHOLD } from '@shared/constants';
 import { logger } from '@shared/logger';
 
 let embedderPromise: Promise<ImageEmbedder> | null = null;
@@ -95,7 +95,7 @@ export function cosineSimilarity(a: number[], b: number[]): number {
 export function findBestMatch(
   embedding: number[],
   customObjects: { label: string; embeddings: number[][] }[],
-  threshold = 0.6
+  threshold = DEFAULT_MATCH_THRESHOLD
 ): { label: string; similarity: number } | null {
   let best: { label: string; similarity: number } | null = null;
 

@@ -3,6 +3,7 @@ import { join } from 'path';
 import type { CustomObject } from '@shared/types';
 import { logger } from '@shared/logger';
 import { PROJECT_ROOT } from '@shared/root';
+import { DEFAULT_CUSTOM_MATCH_THRESHOLD } from '@shared/constants';
 
 const DB_PATH = join(PROJECT_ROOT, 'recordings', 'recordings.sqlite');
 
@@ -25,7 +26,7 @@ export function initCustomObjects(): void {
       embeddings TEXT NOT NULL,
       previews TEXT NOT NULL DEFAULT '[]',
       example_count INTEGER NOT NULL DEFAULT 0,
-      match_threshold REAL NOT NULL DEFAULT 0.4,
+      match_threshold REAL NOT NULL DEFAULT ${DEFAULT_CUSTOM_MATCH_THRESHOLD},
       created_at TEXT DEFAULT (datetime('now'))
     )
   `);
@@ -90,7 +91,7 @@ export function saveCustomObject(obj: {
       JSON.stringify(obj.embeddings),
       JSON.stringify(obj.previews),
       obj.embeddings.length,
-      obj.matchThreshold ?? 0.4,
+      obj.matchThreshold ?? DEFAULT_CUSTOM_MATCH_THRESHOLD,
       now
     );
 
@@ -108,7 +109,7 @@ export function saveCustomObject(obj: {
     embeddings: obj.embeddings,
     previews: obj.previews,
     exampleCount: obj.embeddings.length,
-    matchThreshold: obj.matchThreshold ?? 0.4,
+    matchThreshold: obj.matchThreshold ?? DEFAULT_CUSTOM_MATCH_THRESHOLD,
     createdAt: now,
   };
 }
@@ -133,7 +134,12 @@ export function addExamplesToObject(
     .prepare(
       'UPDATE custom_objects SET embeddings = ?, previews = ?, example_count = ? WHERE id = ?'
     )
-    .run(JSON.stringify(combinedEmb), JSON.stringify(combinedPrev), combinedEmb.length, id);
+    .run(
+      JSON.stringify(combinedEmb),
+      JSON.stringify(combinedPrev),
+      combinedEmb.length,
+      id
+    );
 
   const objs = getCustomObjects();
   return objs.find(o => o.id === id) ?? null;

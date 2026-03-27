@@ -4,7 +4,7 @@ import type {
   CustomObject,
   DetectionResult,
 } from '@shared/types';
-import { DEFAULT_CONFIG } from '@shared/constants';
+import { DEFAULT_CONFIG, DEFAULT_CUSTOM_MATCH_THRESHOLD } from '@shared/constants';
 import type { ApiService } from './api';
 import { putClip, getClip, getAllClips } from './db';
 
@@ -119,7 +119,7 @@ export class LocalApiService implements ApiService {
       embeddings: obj.embeddings,
       previews: obj.previews,
       exampleCount: obj.embeddings.length,
-      matchThreshold: obj.matchThreshold ?? 0.4,
+      matchThreshold: obj.matchThreshold ?? DEFAULT_CUSTOM_MATCH_THRESHOLD,
       createdAt: new Date().toISOString(),
     };
     objects.push(newObj);

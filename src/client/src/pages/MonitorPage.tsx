@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import { useMonitoringStatus } from '../context/MonitoringStatusContext';
 import { useRecordingsVersion } from '../lib/recordingsVersion';
 import { useIsMobile } from '../hooks/useIsMobile';
@@ -31,6 +31,8 @@ export function MonitorPage() {
     null
   );
   const [customObjectsVersion, setCustomObjectsVersion] = useState(0);
+  const [drawingRegion, setDrawingRegion] = useState(false);
+  const [trainingMinimized, setTrainingMinimized] = useState(false);
 
   const handleTrainDetection = (det: DetectionResult) => {
     setTrainingDetection(det);
@@ -54,6 +56,25 @@ export function MonitorPage() {
     refreshCustomObjects();
     setCustomObjectsVersion(v => v + 1);
   };
+
+  const handleDrawRegionRequest = useCallback(() => {
+    setTrainingMinimized(true);
+    setDrawingRegion(true);
+  }, []);
+
+  const handleRegionDrawn = useCallback((region: { x: number; y: number; width: number; height: number }) => {
+    setDrawingRegion(false);
+    setTrainingMinimized(false);
+    // Pass region to training modal via a ref-based callback
+    regionCallbackRef.current?.(region);
+  }, []);
+
+  const handleRegionCancelled = useCallback(() => {
+    setDrawingRegion(false);
+    setTrainingMinimized(false);
+  }, []);
+
+  const regionCallbackRef = useRef<((region: { x: number; y: number; width: number; height: number }) => void) | null>(null);
 
   if (!cameraEnabled) {
     return (
@@ -90,7 +111,10 @@ export function MonitorPage() {
         stream={stream}
         detections={detections}
         isRecording={isRecording}
-        onDetectionClick={handleTrainDetection}
+        onDetectionClick={drawingRegion ? undefined : handleTrainDetection}
+        drawingRegion={drawingRegion}
+        onRegionDrawn={handleRegionDrawn}
+        onRegionCancelled={handleRegionCancelled}
       />
 
       {/* Detection info + training buttons */}
@@ -169,11 +193,14 @@ export function MonitorPage() {
 
       <TrainingModal
         isOpen={trainingOpen}
-        onClose={() => setTrainingOpen(false)}
+        minimized={trainingMinimized}
+        onClose={() => { setTrainingOpen(false); setDrawingRegion(false); setTrainingMinimized(false); }}
         videoRef={videoRef}
         detection={trainingDetection}
         existingObject={trainingExisting}
         onObjectSaved={handleObjectSaved}
+        onDrawRegionRequest={handleDrawRegionRequest}
+        regionCallbackRef={regionCallbackRef}
       />
     </>
   );

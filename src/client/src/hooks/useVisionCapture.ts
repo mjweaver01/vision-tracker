@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { CustomObject, DetectionResult } from '@shared/types';
 import { logger } from '@shared/logger';
+import { DEFAULT_CUSTOM_MATCH_THRESHOLD } from '@shared/constants';
 import { getDetector, resetDetector } from '../lib/objectDetector';
 import { cropFromVideo, embedImage, findBestMatch } from '../lib/imageEmbedder';
 import { api } from '../services';
@@ -54,7 +55,7 @@ export function useVisionCapture(
     deviceId,
     notificationObjects = [],
     notificationsEnabled = false,
-    customMatchThreshold = 0.4,
+    customMatchThreshold = DEFAULT_CUSTOM_MATCH_THRESHOLD,
     customObjects = [],
   } = options;
 
@@ -565,7 +566,7 @@ export function useVisionCapture(
           // Refresh cached enhanced detections async (per-detection embedding)
           if (customObjs.length > 0 && video && !embeddingInFlightRef.current) {
             embeddingInFlightRef.current = true;
-            matchCustomObjects(filtered, customObjs, video, opts.customMatchThreshold ?? 0.4)
+            matchCustomObjects(filtered, customObjs, video, opts.customMatchThreshold ?? DEFAULT_CUSTOM_MATCH_THRESHOLD)
               .then(enhanced => {
                 embeddingInFlightRef.current = false;
                 cachedEnhancedRef.current = enhanced;

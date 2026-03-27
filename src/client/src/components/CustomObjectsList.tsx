@@ -47,12 +47,14 @@ export function CustomObjectsList({
             <div className="flex items-center justify-between px-3 py-2">
               <button
                 type="button"
-                onClick={() => setExpandedId(expandedId === obj.id ? null : obj.id)}
+                onClick={() =>
+                  setExpandedId(expandedId === obj.id ? null : obj.id)
+                }
                 className="min-w-0 text-left"
               >
                 <p className="text-sm font-medium text-zinc-100">{obj.label}</p>
                 <p className="text-xs text-zinc-500">
-                  {obj.baseClass ? `Refines "${obj.baseClass}"` : 'New object'} ·{' '}
+                  {obj.baseClass ? `Refines "${obj.baseClass} ·"` : ''}{' '}
                   {obj.exampleCount} examples
                 </p>
               </button>
@@ -75,26 +77,33 @@ export function CustomObjectsList({
                 </button>
               </div>
             </div>
-            {expandedId === obj.id && obj.previews && obj.previews.length > 0 && (
-              <div className="border-t border-zinc-700 px-3 py-2">
-                <p className="mb-2 text-xs text-zinc-500">Training examples:</p>
-                <div className="flex flex-wrap gap-1.5">
-                  {obj.previews.map((src, i) => (
-                    <img
-                      key={i}
-                      src={src}
-                      alt={`Example ${i + 1}`}
-                      className="h-14 w-14 rounded-md object-cover border border-zinc-700"
-                    />
-                  ))}
+            {expandedId === obj.id &&
+              obj.previews &&
+              obj.previews.length > 0 && (
+                <div className="border-t border-zinc-700 px-3 py-2">
+                  <p className="mb-2 text-xs text-zinc-500">
+                    Training examples:
+                  </p>
+                  <div className="flex flex-wrap gap-1.5">
+                    {obj.previews.map((src, i) => (
+                      <img
+                        key={i}
+                        src={src}
+                        alt={`Example ${i + 1}`}
+                        className="h-14 w-14 rounded-md object-cover border border-zinc-700"
+                      />
+                    ))}
+                  </div>
                 </div>
-              </div>
-            )}
-            {expandedId === obj.id && (!obj.previews || obj.previews.length === 0) && (
-              <div className="border-t border-zinc-700 px-3 py-2">
-                <p className="text-xs text-zinc-500">No preview images saved for this object.</p>
-              </div>
-            )}
+              )}
+            {expandedId === obj.id &&
+              (!obj.previews || obj.previews.length === 0) && (
+                <div className="border-t border-zinc-700 px-3 py-2">
+                  <p className="text-xs text-zinc-500">
+                    No preview images saved for this object.
+                  </p>
+                </div>
+              )}
           </div>
         ))}
       </div>

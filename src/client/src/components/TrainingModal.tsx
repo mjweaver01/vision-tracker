@@ -1,27 +1,31 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import type { CustomObject, DetectionResult } from '@shared/types';
-import { COCO_LABELS } from '@shared/constants';
+import { COCO_LABELS, DEFAULT_CUSTOM_MATCH_THRESHOLD } from '@shared/constants';
 import { cropFromVideo, embedImage } from '../lib/imageEmbedder';
 import { api } from '../services';
 
 interface TrainingModalProps {
   isOpen: boolean;
+  minimized?: boolean;
   onClose: () => void;
   videoRef: React.RefObject<HTMLVideoElement | null>;
-  /** If provided, pre-fills as a refinement of this COCO detection */
   detection?: DetectionResult | null;
-  /** If provided, add examples to this existing object instead of creating new */
   existingObject?: CustomObject | null;
   onObjectSaved: () => void;
+  onDrawRegionRequest?: () => void;
+  regionCallbackRef?: React.MutableRefObject<((region: { x: number; y: number; width: number; height: number }) => void) | null>;
 }
 
 export function TrainingModal({
   isOpen,
+  minimized,
   onClose,
   videoRef,
   detection,
   existingObject,
   onObjectSaved,
+  onDrawRegionRequest,
+  regionCallbackRef,
 }: TrainingModalProps) {
   const [label, setLabel] = useState('');
   const [baseClass, setBaseClass] = useState<string | null>(null);
@@ -32,16 +36,31 @@ export function TrainingModal({
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // For custom region selection
-  const canvasRef = useRef<HTMLCanvasElement | null>(null);
-  const [selectingRegion, setSelectingRegion] = useState(false);
-  const [regionStart, setRegionStart] = useState<{
-    x: number;
-    y: number;
-  } | null>(null);
-  const [regionEnd, setRegionEnd] = useState<{ x: number; y: number } | null>(
-    null
-  );
+  // Register region capture callback so CameraFeed can send drawn regions here
+  useEffect(() => {
+    if (!regionCallbackRef) return;
+    regionCallbackRef.current = async (region) => {
+      const video = videoRef.current;
+      if (!video) return;
+      if (region.width < 10 || region.height < 10) {
+        setError('Region too small. Draw a larger area.');
+        return;
+      }
+      setCapturing(true);
+      setError(null);
+      try {
+        const canvas = cropFromVideo(video, region.x, region.y, region.width, region.height);
+        const embedding = await embedImage(canvas);
+        setEmbeddings(prev => [...prev, embedding]);
+        setPreviews(prev => [...prev, canvas.toDataURL('image/jpeg', 0.7)]);
+      } catch {
+        setError('Failed to capture embedding. Try again.');
+      } finally {
+        setCapturing(false);
+      }
+    };
+    return () => { regionCallbackRef.current = null; };
+  }, [regionCallbackRef, videoRef]);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -65,7 +84,7 @@ export function TrainingModal({
   }, [isOpen, detection, existingObject]);
 
   useEffect(() => {
-    if (!isOpen) return;
+    if (!isOpen || minimized) return;
     const handleEscape = (e: KeyboardEvent) => {
       if (e.key === 'Escape') onClose();
     };
@@ -75,7 +94,7 @@ export function TrainingModal({
       document.removeEventListener('keydown', handleEscape);
       document.body.style.overflow = '';
     };
-  }, [isOpen, onClose]);
+  }, [isOpen, minimized, onClose]);
 
   const captureFromDetection = useCallback(async () => {
     const video = videoRef.current;
@@ -88,7 +107,7 @@ export function TrainingModal({
       const embedding = await embedImage(canvas);
       setEmbeddings(prev => [...prev, embedding]);
       setPreviews(prev => [...prev, canvas.toDataURL('image/jpeg', 0.7)]);
-    } catch (err) {
+    } catch {
       setError('Failed to capture embedding. Try again.');
     } finally {
       setCapturing(false);
@@ -101,53 +120,16 @@ export function TrainingModal({
     setCapturing(true);
     setError(null);
     try {
-      const canvas = cropFromVideo(
-        video,
-        0,
-        0,
-        video.videoWidth,
-        video.videoHeight
-      );
+      const canvas = cropFromVideo(video, 0, 0, video.videoWidth, video.videoHeight);
       const embedding = await embedImage(canvas);
       setEmbeddings(prev => [...prev, embedding]);
       setPreviews(prev => [...prev, canvas.toDataURL('image/jpeg', 0.7)]);
-    } catch (err) {
+    } catch {
       setError('Failed to capture embedding. Try again.');
     } finally {
       setCapturing(false);
     }
   }, [videoRef]);
-
-  const captureRegion = useCallback(async () => {
-    const video = videoRef.current;
-    if (!video || !regionStart || !regionEnd) return;
-    setCapturing(true);
-    setError(null);
-    try {
-      const scaleX = video.videoWidth / video.getBoundingClientRect().width;
-      const scaleY = video.videoHeight / video.getBoundingClientRect().height;
-      const x = Math.min(regionStart.x, regionEnd.x) * scaleX;
-      const y = Math.min(regionStart.y, regionEnd.y) * scaleY;
-      const w = Math.abs(regionEnd.x - regionStart.x) * scaleX;
-      const h = Math.abs(regionEnd.y - regionStart.y) * scaleY;
-      if (w < 10 || h < 10) {
-        setError('Region too small. Draw a larger area.');
-        setCapturing(false);
-        return;
-      }
-      const canvas = cropFromVideo(video, x, y, w, h);
-      const embedding = await embedImage(canvas);
-      setEmbeddings(prev => [...prev, embedding]);
-      setPreviews(prev => [...prev, canvas.toDataURL('image/jpeg', 0.7)]);
-    } catch (err) {
-      setError('Failed to capture embedding. Try again.');
-    } finally {
-      setCapturing(false);
-      setSelectingRegion(false);
-      setRegionStart(null);
-      setRegionEnd(null);
-    }
-  }, [videoRef, regionStart, regionEnd]);
 
   const removeExample = (index: number) => {
     setEmbeddings(prev => prev.filter((_, i) => i !== index));
@@ -168,12 +150,12 @@ export function TrainingModal({
           baseClass: mode === 'coco' ? baseClass : null,
           embeddings,
           previews,
-          matchThreshold: 0.4,
+          matchThreshold: DEFAULT_CUSTOM_MATCH_THRESHOLD,
         });
       }
       onObjectSaved();
       onClose();
-    } catch (err) {
+    } catch {
       setError('Failed to save. Try again.');
     } finally {
       setSaving(false);
@@ -181,6 +163,9 @@ export function TrainingModal({
   };
 
   if (!isOpen) return null;
+
+  // Minimized state: modal is hidden while user draws on camera feed
+  if (minimized) return null;
 
   return (
     <div
@@ -211,18 +196,8 @@ export function TrainingModal({
             className="-m-2 rounded-full p-2 text-zinc-400 hover:bg-zinc-800 hover:text-zinc-100 touch-manipulation"
             aria-label="Close"
           >
-            <svg
-              className="h-5 w-5"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-              strokeWidth={2}
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M6 18L18 6M6 6l12 12"
-              />
+            <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
             </svg>
           </button>
         </div>
@@ -233,28 +208,18 @@ export function TrainingModal({
             <div className="flex gap-2">
               <button
                 type="button"
-                onClick={() => {
-                  setMode('coco');
-                  setBaseClass(null);
-                }}
+                onClick={() => { setMode('coco'); setBaseClass(null); }}
                 className={`flex-1 rounded-lg px-3 py-2 text-sm font-medium ${
-                  mode === 'coco'
-                    ? 'bg-red-600 text-white'
-                    : 'bg-zinc-800 text-zinc-400'
+                  mode === 'coco' ? 'bg-red-600 text-white' : 'bg-zinc-800 text-zinc-400'
                 }`}
               >
                 Relabel COCO Object
               </button>
               <button
                 type="button"
-                onClick={() => {
-                  setMode('new');
-                  setBaseClass(null);
-                }}
+                onClick={() => { setMode('new'); setBaseClass(null); }}
                 className={`flex-1 rounded-lg px-3 py-2 text-sm font-medium ${
-                  mode === 'new'
-                    ? 'bg-red-600 text-white'
-                    : 'bg-zinc-800 text-zinc-400'
+                  mode === 'new' ? 'bg-red-600 text-white' : 'bg-zinc-800 text-zinc-400'
                 }`}
               >
                 New Object
@@ -265,9 +230,7 @@ export function TrainingModal({
           {/* Base class selector for COCO relabeling */}
           {mode === 'coco' && !detection && !existingObject && (
             <div>
-              <label className="mb-1 block text-sm text-zinc-400">
-                Base COCO class
-              </label>
+              <label className="mb-1 block text-sm text-zinc-400">Base COCO class</label>
               <select
                 value={baseClass ?? ''}
                 onChange={e => setBaseClass(e.target.value || null)}
@@ -275,53 +238,36 @@ export function TrainingModal({
               >
                 <option value="">Select...</option>
                 {COCO_LABELS.map(l => (
-                  <option key={l} value={l}>
-                    {l}
-                  </option>
+                  <option key={l} value={l}>{l}</option>
                 ))}
               </select>
               <p className="mt-1 text-xs text-zinc-500">
-                When a &quot;{baseClass || '...'}&quot; is detected, it will
-                check if it matches your custom label
+                When a &quot;{baseClass || '...'}&quot; is detected, it will check if it matches your custom label
               </p>
             </div>
           )}
 
           {detection && !existingObject && (
             <p className="text-sm text-zinc-400">
-              When a{' '}
-              <span className="font-medium text-red-400">
-                {detection.label}
-              </span>{' '}
-              is detected, check if it matches your custom label instead.
+              When a <span className="font-medium text-red-400">{detection.label}</span> is detected, check if it matches your custom label instead.
             </p>
           )}
 
           {existingObject && (
             <p className="text-sm text-zinc-400">
-              Adding more examples to{' '}
-              <span className="font-medium text-red-400">
-                {existingObject.label}
-              </span>{' '}
-              ({existingObject.exampleCount} existing examples)
+              Adding more examples to <span className="font-medium text-red-400">{existingObject.label}</span> ({existingObject.exampleCount} existing examples)
             </p>
           )}
 
           {/* Label input */}
           {!existingObject && (
             <div>
-              <label className="mb-1 block text-sm text-zinc-400">
-                Custom label name
-              </label>
+              <label className="mb-1 block text-sm text-zinc-400">Custom label name</label>
               <input
                 type="text"
                 value={label}
                 onChange={e => setLabel(e.target.value)}
-                placeholder={
-                  detection
-                    ? `e.g., "Michael" instead of "${detection.label}"`
-                    : 'e.g., "My coffee mug"'
-                }
+                placeholder={detection ? `e.g., "Michael" instead of "${detection.label}"` : 'e.g., "My coffee mug"'}
                 className="w-full rounded-md border border-zinc-700 bg-zinc-800 px-3 py-2 text-zinc-100 focus:border-red-500 focus:outline-none"
               />
             </div>
@@ -361,10 +307,8 @@ export function TrainingModal({
                   </button>
                   <button
                     type="button"
-                    onClick={() => setSelectingRegion(true)}
-                    disabled={
-                      capturing || embeddings.length >= 10 || selectingRegion
-                    }
+                    onClick={onDrawRegionRequest}
+                    disabled={capturing || embeddings.length >= 10}
                     className="rounded-lg bg-zinc-700 px-4 py-2 text-sm font-medium text-zinc-200 hover:bg-zinc-600 disabled:opacity-50"
                   >
                     Draw Region
@@ -372,36 +316,6 @@ export function TrainingModal({
                 </>
               )}
             </div>
-
-            {selectingRegion && (
-              <div className="mt-3 rounded-lg border border-red-500/50 bg-red-500/10 p-2">
-                <p className="text-xs text-red-400 mb-2">
-                  Click and drag on the camera feed to select a region, then
-                  click &quot;Capture Region&quot;
-                </p>
-                <div className="flex gap-2">
-                  <button
-                    type="button"
-                    onClick={captureRegion}
-                    disabled={!regionStart || !regionEnd || capturing}
-                    className="rounded-lg bg-red-600 px-3 py-1.5 text-sm text-white hover:bg-red-500 disabled:opacity-50"
-                  >
-                    Capture Region
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setSelectingRegion(false);
-                      setRegionStart(null);
-                      setRegionEnd(null);
-                    }}
-                    className="rounded-lg bg-zinc-700 px-3 py-1.5 text-sm text-zinc-300 hover:bg-zinc-600"
-                  >
-                    Cancel
-                  </button>
-                </div>
-              </div>
-            )}
           </div>
 
           {/* Previews */}
@@ -409,11 +323,7 @@ export function TrainingModal({
             <div className="flex flex-wrap gap-2">
               {previews.map((src, i) => (
                 <div key={i} className="relative group">
-                  <img
-                    src={src}
-                    alt={`Example ${i + 1}`}
-                    className="h-16 w-16 rounded-md object-cover border border-zinc-700"
-                  />
+                  <img src={src} alt={`Example ${i + 1}`} className="h-16 w-16 rounded-md object-cover border border-zinc-700" />
                   <button
                     type="button"
                     onClick={() => removeExample(i)}
@@ -432,7 +342,7 @@ export function TrainingModal({
           <button
             type="button"
             onClick={handleSave}
-            disabled={saving || !label.trim() || embeddings.length === 0}
+            disabled={saving || (!existingObject && !label.trim()) || embeddings.length === 0}
             className="w-full rounded-lg bg-red-600 px-4 py-3 font-medium text-white hover:bg-red-500 disabled:opacity-50"
           >
             {saving
@@ -442,8 +352,7 @@ export function TrainingModal({
                 : `Save "${label || '...'}" (${embeddings.length} examples)`}
           </button>
           <p className="text-xs text-zinc-500 text-center">
-            More examples from different angles = better recognition. 3-5
-            minimum recommended.
+            More examples from different angles = better recognition. 3-5 minimum recommended.
           </p>
         </div>
       </div>

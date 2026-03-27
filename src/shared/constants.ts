@@ -6,6 +6,10 @@ export const DEBUG = process.env.NODE_ENV === 'development' || false;
 // API base URL
 export const API_BASE = '/api';
 
+// Detection thresholds
+export const DEFAULT_CUSTOM_MATCH_THRESHOLD = 0.3;
+export const DEFAULT_MATCH_THRESHOLD = 0.6;
+
 // Default config
 export const DEFAULT_CONFIG: AppConfig = {
   confidenceThreshold: 0.5,
@@ -15,7 +19,7 @@ export const DEFAULT_CONFIG: AppConfig = {
   preBufferSeconds: 2,
   postBufferSeconds: 2,
   maxClipSeconds: 30,
-  customMatchThreshold: 0.4,
+  customMatchThreshold: DEFAULT_CUSTOM_MATCH_THRESHOLD,
   notificationObjects: [],
   notificationsEnabled: false,
 };
